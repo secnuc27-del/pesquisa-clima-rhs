@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulário de Escuta Organizacional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF9;
+    --surface: #FFFFFF;
+    --text-primary: #1C1917;
+    --text-secondary: #57534E;
+    --text-muted: #A8A29E;
+    --accent: #1E3A5F;
+    --accent-light: #EBF0F7;
+    --border: #E7E5E4;
+    --border-strong: #D6D3D1;
+    --success: #1A5E3A;
+    --success-bg: #ECFDF5;
+    --error: #991B1B;
+    --error-bg: #FEF2F2;
+    --error-border: #FCA5A5;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ── HEADER / NAV ── */
+  .site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-header .logo {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  .site-header .logo span {
+    color: #78716C;
+    font-weight: 400;
+    font-size: 0.85rem;
+    margin-left: 8px;
+    font-family: var(--font-body);
+  }
+
+
+
+  /* ── COVER PAGE ── */
+  .cover-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem 4rem;
+  }
+  .cover-center {
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+  }
+  .cover-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .cover-eyebrow::before,
+  .cover-eyebrow::after {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.35;
+  }
+  .cover-title {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75rem;
+  }
+  .cover-subtitle {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    margin-bottom: 2rem;
+  }
+  .cover-divider {
+    width: 40px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 0 auto 2rem;
+    opacity: 0.5;
+  }
+  .cover-tagline {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 3rem;
+  }
+  
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    letter-spacing: 0.01em;
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-primary:hover { background: #163152; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary svg { width: 16px; height: 16px; fill: none; stroke: white; stroke-width: 2; }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 6px 0;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .btn-back:hover { color: var(--text-primary); }
+  .review-icon-wrap {
+    width: 64px;
+    height: 64px;
+    background: var(--accent-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.75rem;
+    color: var(--accent);
+    border: 1px solid #C7D9EF;
+  }
+
+  /* ── FORM PAGE ── */
+  .form-main {
+    flex: 1;
+    padding: 2.5rem 1.5rem 4rem;
+    max-width: 780px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .form-progress-bar-container {
+    background: var(--border);
+    height: 3px;
+    border-radius: 2px;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+  }
+  .form-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .form-intro {
+    margin-bottom: 2rem;
+  }
+  .form-intro h2 {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+  }
+  .form-intro p { font-size: 0.875rem; color: var(--text-secondary); }
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  .question-block { margin-bottom: 1.75rem; }
+  .question-block:last-child { margin-bottom: 0; }
+  .question-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+  }
+  .question-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-right: 6px;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.6rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+  .radio-option:hover { background: var(--bg); border-color: var(--border-strong); }
+  .radio-option input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .radio-option.selected {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .question-block.has-error .radio-group .radio-option:not(.selected),
+  .question-block.has-error textarea,
+  .question-block.has-error .scale-btn-group {
+    border-color: var(--error-border);
+  }
+  .question-block.has-error .radio-group {
+    border-radius: var(--radius-sm);
+    outline: 1px solid var(--error-border);
+    outline-offset: 2px;
+  }
+  .error-hint {
+    display: none;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--error);
+  }
+  .question-block.has-error .error-hint { display: block; }
+  textarea.form-textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    resize: vertical;
+    min-height: 110px;
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+  textarea.form-textarea:focus { border-color: var(--accent); }
+  textarea.form-textarea::placeholder { color: var(--text-muted); }
+  .scale-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .scale-btn-group {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    gap: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    background: var(--bg);
+  }
+  .scale-btn {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scale-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .scale-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
+  .validation-alert {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    font-size: 0.85rem;
+    color: var(--error);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .validation-alert.visible { display: flex; }
+  .validation-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  .form-count { font-size: 0.82rem; color: var(--text-secondary); }
+  .btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.875rem 2.5rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: #163152; }
+
+  /* ── CONFIRMATION PAGE ── */
+  .confirm-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+  .confirm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 540px;
+    width: 100%;
+    padding: 3rem;
+    text-align: center;
+  }
+  .confirm-icon-wrap {
+    width: 72px;
+    height: 72px;
+    background: var(--success-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.75rem;
+    border: 1px solid #A7F3D0;
+  }
+  .confirm-icon-wrap svg { width: 32px; height: 32px; stroke: var(--success); fill: none; stroke-width: 2.5; }
+  .confirm-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+  .confirm-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.75rem 2rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-outline:hover { background: var(--accent-light); }
+
+  /* ── ADMIN LOGIN ── */
+  .admin-login-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+  }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 400px;
+    width: 100%;
+    overflow: hidden;
+  }
+  .login-card-top {
+    background: var(--accent);
+    padding: 2rem;
+    text-align: center;
+  }
+  .login-card-top .lock-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+  .login-card-top .lock-icon svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
+  .login-card-top h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: white; margin-bottom: 0.25rem; }
+  .login-card-top p { font-size: 0.8rem; color: rgba(255,255,255,0.65); }
+  .login-card-body { padding: 2rem; }
+  .form-field { margin-bottom: 1.25rem; }
+  .form-field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-field input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+    background: var(--bg);
+  }
+  .form-field input:focus { border-color: var(--accent); background: white; }
+  .login-error {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    color: var(--error);
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .login-error.visible { display: block; }
+
+  /* ── ADMIN DASHBOARD ── */
+  #page-admin { background: var(--bg); }
+  .admin-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .admin-header .logo {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .btn-logout {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-logout:hover { background: var(--bg); }
+  .admin-main { padding: 2.5rem 2rem 4rem; max-width: 1100px; margin: 0 auto; }
+  .admin-section-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .admin-section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.75rem; }
+  .metric-value { font-family: var(--font-display); font-size: 2.2rem; font-weight: 500; color: var(--text-primary); line-height: 1; margin-bottom: 0.4rem; }
+  .metric-sub { font-size: 0.8rem; color: var(--text-muted); }
+  .metric-card.accent-card { border-color: var(--accent); background: var(--accent-light); }
+  .metric-card.accent-card .metric-value { color: var(--accent); }
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+  @media (max-width: 700px) { .admin-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .chart-card-title { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.25rem; }
+  .chart-card-full { grid-column: 1 / -1; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+  }
+  .bar-label { flex: 0 0 140px; color: var(--text-secondary); text-align: right; font-size: 0.8rem; }
+  .bar-track { flex: 1; background: var(--bg); border-radius: 4px; height: 24px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px; }
+  .bar-fill span { color: white; font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+  .bar-pct { flex: 0 0 36px; font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); }
+  .scale-distribution { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 8px; }
+  .scale-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+  .scale-bar-fill { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; transition: height 0.6s ease; flex-shrink: 0; }
+  .scale-bar-num { font-size: 0.7rem; color: var(--text-muted); }
+  .scale-avg-row { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .scale-avg-label { font-size: 0.8rem; color: var(--text-secondary); }
+  .scale-avg-val { font-family: var(--font-display); font-size: 2rem; font-weight: 500; color: var(--accent); }
+  .open-answers { margin-bottom: 2.5rem; }
+  .answer-list { display: flex; flex-direction: column; gap: 10px; }
+  .answer-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    box-shadow: var(--shadow-sm);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  .export-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1.25rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .export-bar p { font-size: 0.85rem; color: var(--text-secondary); }
+  .btn-export {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn-export:hover { background: var(--bg); }
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--error-border);
+    color: var(--error);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-left: 8px;
+  }
+  .btn-clear:hover { background: var(--error-bg); }
+  .site-footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+
+  /* ── TOUCH TARGET BASE (todos os tamanhos) ── */
+  .radio-option {
+    min-height: 48px;
+    padding: 0.7rem 0.875rem;
+  }
+  .scale-btn {
+    min-height: 44px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    /* Header */
+    .site-header { padding: 0 1rem; height: 54px; }
+    .site-header .logo { font-size: 0.9rem; }
+    .site-header .logo span { font-size: 0.73rem; margin-left: 5px; }
+
+    /* Cover — centralizado e espaçado */
+    .cover-main {
+      padding: 3rem 1.25rem 4rem;
+      align-items: center;
+    }
+    .cover-center { text-align: center; }
+    .cover-eyebrow { font-size: 0.67rem; margin-bottom: 1.75rem; gap: 8px; }
+    .cover-eyebrow::before, .cover-eyebrow::after { width: 22px; }
+    .cover-title { font-size: 2.1rem; line-height: 1.1; margin-bottom: 0.6rem; }
+    .cover-subtitle { font-size: 0.83rem; margin-bottom: 1.5rem; }
+    .cover-divider { margin-bottom: 1.25rem; }
+    .cover-tagline { font-size: 0.875rem; line-height: 1.6; margin-bottom: 2.25rem; }
+    .btn-primary {
+      font-size: 0.92rem;
+      padding: 0.9rem 1.5rem;
+      min-height: 52px;
+      max-width: 100% !important;
+      border-radius: 14px;
+    }
+
+    /* Form */
+    .form-main { padding: 1.25rem 0.9rem 3.5rem; }
+    .form-progress-bar-container { margin-bottom: 1.75rem; }
+    .form-intro { margin-bottom: 1.5rem; }
+    .form-intro h2 { font-size: 1.45rem; }
+    .form-intro p { font-size: 0.82rem; }
+
+    /* Sections */
+    .form-section {
+      padding: 1.25rem 1rem;
+      margin-bottom: 0.875rem;
+      border-radius: 14px;
+    }
+    .section-header { margin-bottom: 1.25rem; padding-bottom: 0.875rem; gap: 8px; }
+    .section-title { font-size: 1.05rem; }
+    .question-block { margin-bottom: 1.5rem; }
+    .question-label { font-size: 0.875rem; margin-bottom: 0.625rem; }
+    .question-number { width: 20px; height: 20px; font-size: 0.65rem; }
+
+    /* Radio options — touch friendly */
+    .radio-option {
+      font-size: 0.875rem;
+      padding: 0.75rem 0.875rem;
+      min-height: 50px;
+      border-radius: 8px;
+      gap: 12px;
+    }
+    .radio-option input[type="radio"] { width: 18px; height: 18px; flex-shrink: 0; }
+    .radio-group { gap: 7px; }
+
+    /* Scale — 2 linhas no mobile (6 + 5) */
+    .scale-btn-group {
+      grid-template-columns: repeat(6, 1fr);
+      gap: 5px;
+      padding: 8px;
+      border-radius: 10px;
+    }
+    .scale-btn {
+      aspect-ratio: 1;
+      min-height: 42px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+    /* Centra os últimos 5 botões (linha 2) */
+    .scale-btn:nth-child(7) { grid-column: 1; }
+    .scale-labels { font-size: 0.72rem; }
+
+    /* Textarea */
+    textarea.form-textarea { font-size: 0.875rem; min-height: 100px; }
+
+    /* Form footer */
+    .form-footer { flex-direction: column; gap: 0.875rem; margin-top: 1.75rem; }
+    .form-count { order: 1; width: 100%; text-align: center; font-size: 0.8rem; }
+    .btn-back { order: 2; align-self: center; }
+    .btn-submit {
+      order: 0;
+      width: 100%;
+      justify-content: center;
+      font-size: 0.95rem;
+      min-height: 52px;
+      border-radius: 12px;
+    }
+
+    /* Validation alert */
+    .validation-alert { font-size: 0.82rem; padding: 0.75rem; }
+
+    /* Confirm / Review cards */
+    .confirm-main { padding: 2rem 1rem 3rem; align-items: flex-start; }
+    .confirm-card {
+      padding: 2rem 1.25rem;
+      border-radius: 16px;
+    }
+    .confirm-title { font-size: 1.6rem; }
+    .confirm-text { font-size: 0.875rem; }
+    .confirm-icon-wrap { width: 60px; height: 60px; margin-bottom: 1.25rem; }
+    .review-icon-wrap { width: 56px; height: 56px; margin-bottom: 1.25rem; }
+    .btn-outline {
+      min-height: 48px;
+      font-size: 0.9rem;
+      border-radius: 10px;
+    }
+
+    /* Admin login */
+    .admin-login-main { padding: 1.5rem 1rem; align-items: flex-start; padding-top: 2.5rem; }
+    .login-card { border-radius: 16px; }
+    .login-card-top { padding: 1.5rem 1.25rem; }
+    .login-card-body { padding: 1.5rem 1.25rem; }
+    .form-field input { min-height: 48px; font-size: 1rem; }
+
+    /* Admin dashboard */
+    .admin-header {
+      padding: 0 1rem;
+      height: auto;
+      min-height: 54px;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    .admin-header .logo { font-size: 0.85rem; }
+    .admin-main { padding: 1.25rem 0.875rem 3rem; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.75rem; }
+    .metric-card { padding: 1.1rem; border-radius: 12px; }
+    .metric-value { font-size: 1.9rem; }
+    .metric-label { font-size: 0.7rem; }
+    .admin-grid { grid-template-columns: 1fr; gap: 0.875rem; }
+    .chart-card { padding: 1.1rem; border-radius: 12px; }
+    .bar-row { gap: 7px; }
+    .bar-label { flex: 0 0 75px; font-size: 0.68rem; }
+    .bar-track { height: 26px; }
+    .bar-pct { flex: 0 0 30px; font-size: 0.72rem; }
+    .scale-distribution { height: 88px; gap: 4px; }
+    .scale-bar-num { font-size: 0.65rem; }
+    .admin-section-title { font-size: 1.15rem; }
+    .export-bar { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .btn-export, .btn-clear { min-height: 40px; }
+    .answer-item { font-size: 0.84rem; padding: 0.75rem 0.875rem; }
+    .open-answers { margin-bottom: 1.75rem; }
+  }
+
+  /* Telas muito pequenas (≤360px) */
+  @media (max-width: 360px) {
+    .cover-title { font-size: 1.85rem; }
+    .form-section { padding: 1rem 0.875rem; }
+    .scale-btn-group { grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 6px; }
+    .scale-btn { min-height: 38px; font-size: 0.8rem; }
+    .metrics-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Scroll to error animation */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.35s ease; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1: COVER
+══════════════════════════════════════════════ -->
+<div id="page-cover" class="page active">
+  <header class="site-header">
+    <div class="logo">Escuta Organizacional <span>RH</span></div>
+  </header>
+  <main class="cover-main">
+    <div class="cover-center">
+      <div class="cover-eyebrow">Recursos Humanos</div>
+      <h1 class="cover-title">Formulário de Escuta Organizacional</h1>
+      <p class="cover-subtitle">Técnico em Recursos Humanos</p>
+      <div class="cover-divider"></div>
+      <p class="cover-tagline">Sua participação contribui para compreender melhor o ambiente organizacional.</p>
+      <button class="btn-primary" onclick="startForm()" style="max-width:300px;margin:0 auto;border-radius:14px">
+        Começar formulário
+        <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2: FORM
+══════════════════════════════════════════════ -->
+<div id="page-form" class="page">
+  <header class="site-header">
+    <div class="logo">Escuta Organizacional <span>RH</span></div>
+  </header>
+  <main class="form-main">
+    <div class="form-progress-bar-container">
+      <div class="form-progress-bar" id="progressBar"></div>
+    </div>
+    <div class="form-intro">
+      <h2>Suas percepções importam</h2>
+      <p>Todas as perguntas são obrigatórias. Levará aproximadamente 5 minutos.</p>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="form-section">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <h3 class="section-title">Ambiente Organizacional</h3>
+      </div>
+      <!-- Q1 -->
+      <div class="question-block" id="qblock-q1">
+        <label class="question-label"><span class="question-number">1</span> Como você avalia o ambiente de trabalho na empresa?</label>
+        <div class="radio-group" id="rg-q1">
+          <label class="radio-option"><input type="radio" name="q1" value="Muito ruim"> Muito ruim</label>
+          <label class="radio-option"><input type="radio" name="q1" value="Ruim"> Ruim</label>
+          <label class="radio-option"><input type="radio" name="q1" value="Regular"> Regular</label>
+          <label class="radio-option"><input type="radio" name="q1" value="Bom"> Bom</label>
+          <label class="radio-option"><input type="radio" name="q1" value="Muito bom"> Muito bom</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q2 -->
+      <div class="question-block" id="qblock-q2">
+        <label class="question-label"><span class="question-number">2</span> Você se sente respeitado(a) no seu ambiente de trabalho?</label>
+        <div class="radio-group" id="rg-q2">
+          <label class="radio-option"><input type="radio" name="q2" value="Sempre"> Sempre</label>
+          <label class="radio-option"><input type="radio" name="q2" value="Na maioria das vezes"> Na maioria das vezes</label>
+          <label class="radio-option"><input type="radio" name="q2" value="Às vezes"> Às vezes</label>
+          <label class="radio-option"><input type="radio" name="q2" value="Raramente"> Raramente</label>
+          <label class="radio-option"><input type="radio" name="q2" value="Nunca"> Nunca</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q3 -->
+      <div class="question-block" id="qblock-q3">
+        <label class="question-label"><span class="question-number">3</span> Existe abertura para diálogo com sua liderança quando necessário?</label>
+        <div class="radio-group" id="rg-q3">
+          <label class="radio-option"><input type="radio" name="q3" value="Sempre"> Sempre</label>
+          <label class="radio-option"><input type="radio" name="q3" value="Frequentemente"> Frequentemente</label>
+          <label class="radio-option"><input type="radio" name="q3" value="Às vezes"> Às vezes</label>
+          <label class="radio-option"><input type="radio" name="q3" value="Raramente"> Raramente</label>
+          <label class="radio-option"><input type="radio" name="q3" value="Nunca"> Nunca</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q4 -->
+      <div class="question-block" id="qblock-q4">
+        <label class="question-label"><span class="question-number">4</span> Você considera que o ambiente favorece o trabalho em equipe?</label>
+        <div class="radio-group" id="rg-q4">
+          <label class="radio-option"><input type="radio" name="q4" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q4" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q4" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="form-section">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <h3 class="section-title">Treinamento e Desenvolvimento</h3>
+      </div>
+      <!-- Q5 -->
+      <div class="question-block" id="qblock-q5">
+        <label class="question-label"><span class="question-number">5</span> Você recebeu treinamento ao iniciar suas atividades na empresa?</label>
+        <div class="radio-group" id="rg-q5">
+          <label class="radio-option"><input type="radio" name="q5" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q5" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q6 -->
+      <div class="question-block" id="qblock-q6">
+        <label class="question-label"><span class="question-number">6</span> Atualmente, a empresa oferece treinamentos ou orientações para o desempenho das funções?</label>
+        <div class="radio-group" id="rg-q6">
+          <label class="radio-option"><input type="radio" name="q6" value="Sim, frequentemente"> Sim, frequentemente</label>
+          <label class="radio-option"><input type="radio" name="q6" value="Ocasionalmente"> Ocasionalmente</label>
+          <label class="radio-option"><input type="radio" name="q6" value="Raramente"> Raramente</label>
+          <label class="radio-option"><input type="radio" name="q6" value="Nunca"> Nunca</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q7 -->
+      <div class="question-block" id="qblock-q7">
+        <label class="question-label"><span class="question-number">7</span> Você se sente preparado(a) para atender às demandas e cobranças do seu cargo?</label>
+        <div class="radio-group" id="rg-q7">
+          <label class="radio-option"><input type="radio" name="q7" value="Totalmente preparado(a)"> Totalmente preparado(a)</label>
+          <label class="radio-option"><input type="radio" name="q7" value="Parcialmente preparado(a)"> Parcialmente preparado(a)</label>
+          <label class="radio-option"><input type="radio" name="q7" value="Pouco preparado(a)"> Pouco preparado(a)</label>
+          <label class="radio-option"><input type="radio" name="q7" value="Não me sinto preparado(a)"> Não me sinto preparado(a)</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q8 -->
+      <div class="question-block" id="qblock-q8">
+        <label class="question-label"><span class="question-number">8</span> Na sua percepção, as cobranças da função estão alinhadas com o nível de preparo oferecido pela empresa?</label>
+        <div class="radio-group" id="rg-q8">
+          <label class="radio-option"><input type="radio" name="q8" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q8" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q8" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="form-section">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <h3 class="section-title">Bem-estar no Trabalho e Percepção do Ambiente</h3>
+      </div>
+      <!-- Q9 -->
+      <div class="question-block" id="qblock-q9">
+        <label class="question-label"><span class="question-number">9</span> De forma geral, como você avalia seu bem-estar no ambiente de trabalho?</label>
+        <div class="radio-group" id="rg-q9">
+          <label class="radio-option"><input type="radio" name="q9" value="Muito ruim"> Muito ruim</label>
+          <label class="radio-option"><input type="radio" name="q9" value="Ruim"> Ruim</label>
+          <label class="radio-option"><input type="radio" name="q9" value="Regular"> Regular</label>
+          <label class="radio-option"><input type="radio" name="q9" value="Bom"> Bom</label>
+          <label class="radio-option"><input type="radio" name="q9" value="Muito bom"> Muito bom</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q10 -->
+      <div class="question-block" id="qblock-q10">
+        <label class="question-label"><span class="question-number">10</span> Você já se sentiu sobrecarregado(a) em função das atividades do trabalho?</label>
+        <div class="radio-group" id="rg-q10">
+          <label class="radio-option"><input type="radio" name="q10" value="Frequentemente"> Frequentemente</label>
+          <label class="radio-option"><input type="radio" name="q10" value="Às vezes"> Às vezes</label>
+          <label class="radio-option"><input type="radio" name="q10" value="Raramente"> Raramente</label>
+          <label class="radio-option"><input type="radio" name="q10" value="Nunca"> Nunca</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q11 -->
+      <div class="question-block" id="qblock-q11">
+        <label class="question-label"><span class="question-number">11</span> A empresa demonstra preocupação com o bem-estar dos colaboradores?</label>
+        <div class="radio-group" id="rg-q11">
+          <label class="radio-option"><input type="radio" name="q11" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q11" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q11" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q12 -->
+      <div class="question-block" id="qblock-q12">
+        <label class="question-label"><span class="question-number">12</span> Você sente que consegue manter equilíbrio entre trabalho e vida pessoal?</label>
+        <div class="radio-group" id="rg-q12">
+          <label class="radio-option"><input type="radio" name="q12" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q12" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q12" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="form-section">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <h3 class="section-title">Comunicação Interna e Valorização</h3>
+      </div>
+      <!-- Q13 -->
+      <div class="question-block" id="qblock-q13">
+        <label class="question-label"><span class="question-number">13</span> Você se sente bem informado(a) sobre o que acontece na empresa?</label>
+        <div class="radio-group" id="rg-q13">
+          <label class="radio-option"><input type="radio" name="q13" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q13" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q13" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q14 -->
+      <div class="question-block" id="qblock-q14">
+        <label class="question-label"><span class="question-number">14</span> As informações importantes são comunicadas com clareza?</label>
+        <div class="radio-group" id="rg-q14">
+          <label class="radio-option"><input type="radio" name="q14" value="Sempre"> Sempre</label>
+          <label class="radio-option"><input type="radio" name="q14" value="Frequentemente"> Frequentemente</label>
+          <label class="radio-option"><input type="radio" name="q14" value="Às vezes"> Às vezes</label>
+          <label class="radio-option"><input type="radio" name="q14" value="Raramente"> Raramente</label>
+          <label class="radio-option"><input type="radio" name="q14" value="Nunca"> Nunca</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q15 -->
+      <div class="question-block" id="qblock-q15">
+        <label class="question-label"><span class="question-number">15</span> Você se sente valorizado(a) pelo seu trabalho?</label>
+        <div class="radio-group" id="rg-q15">
+          <label class="radio-option"><input type="radio" name="q15" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q15" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q15" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q16 -->
+      <div class="question-block" id="qblock-q16">
+        <label class="question-label"><span class="question-number">16</span> A empresa realiza ações internas (eventos, campanhas, reconhecimento)?</label>
+        <div class="radio-group" id="rg-q16">
+          <label class="radio-option"><input type="radio" name="q16" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q16" value="Às vezes"> Às vezes</label>
+          <label class="radio-option"><input type="radio" name="q16" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="form-section">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <h3 class="section-title">Crescimento e Percepção</h3>
+      </div>
+      <!-- Q17 -->
+      <div class="question-block" id="qblock-q17">
+        <label class="question-label"><span class="question-number">17</span> Você enxerga oportunidades de crescimento dentro da empresa?</label>
+        <div class="radio-group" id="rg-q17">
+          <label class="radio-option"><input type="radio" name="q17" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q17" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q17" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q18 -->
+      <div class="question-block" id="qblock-q18">
+        <label class="question-label"><span class="question-number">18</span> Você tem clareza sobre suas funções e responsabilidades no trabalho?</label>
+        <div class="radio-group" id="rg-q18">
+          <label class="radio-option"><input type="radio" name="q18" value="Sim"> Sim</label>
+          <label class="radio-option"><input type="radio" name="q18" value="Parcialmente"> Parcialmente</label>
+          <label class="radio-option"><input type="radio" name="q18" value="Não"> Não</label>
+        </div>
+        <div class="error-hint">Por favor, selecione uma opção para continuar.</div>
+      </div>
+      <!-- Q19 -->
+      <div class="question-block" id="qblock-q19">
+        <label class="question-label"><span class="question-number">19</span> O que você acredita que poderia melhorar no ambiente de trabalho?</label>
+        <textarea class="form-textarea" id="q19" placeholder="Escreva livremente a sua percepção..." rows="4" oninput="updateProgress()"></textarea>
+        <div class="error-hint">Por favor, escreva sua resposta para continuar.</div>
+      </div>
+      <!-- Q20 -->
+      <div class="question-block" id="qblock-q20">
+        <label class="question-label"><span class="question-number">20</span> Em uma escala de 0 a 10, quanto você indicaria esta empresa como um bom lugar para trabalhar?</label>
+        <div class="scale-group">
+          <div class="scale-labels"><span>Não indicaria</span><span>Indicaria muito</span></div>
+          <div class="scale-btn-group" id="scale-q20">
+            <button class="scale-btn" type="button" onclick="selectScale(0)">0</button>
+            <button class="scale-btn" type="button" onclick="selectScale(1)">1</button>
+            <button class="scale-btn" type="button" onclick="selectScale(2)">2</button>
+            <button class="scale-btn" type="button" onclick="selectScale(3)">3</button>
+            <button class="scale-btn" type="button" onclick="selectScale(4)">4</button>
+            <button class="scale-btn" type="button" onclick="selectScale(5)">5</button>
+            <button class="scale-btn" type="button" onclick="selectScale(6)">6</button>
+            <button class="scale-btn" type="button" onclick="selectScale(7)">7</button>
+            <button class="scale-btn" type="button" onclick="selectScale(8)">8</button>
+            <button class="scale-btn" type="button" onclick="selectScale(9)">9</button>
+            <button class="scale-btn" type="button" onclick="selectScale(10)">10</button>
+          </div>
+        </div>
+        <div class="error-hint">Por favor, selecione uma nota de 0 a 10.</div>
+      </div>
+    </div>
+
+    <div class="validation-alert" id="validationAlert">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="7"/><line x1="8" y1="5" x2="8" y2="8.5"/><circle cx="8" cy="11" r="0.5" fill="currentColor"/></svg>
+      Por favor, responda todas as perguntas antes de finalizar.
+    </div>
+
+    <div class="form-footer">
+      <button class="btn-back" onclick="showPage('page-cover')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 4L6 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Voltar
+      </button>
+      <span class="form-count" id="formCount">0 de 20 respondidas</span>
+      <button class="btn-submit" onclick="submitForm()">
+        Finalizar e enviar
+        <svg viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" width="16" height="16"><path d="M2 8h12M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </main>
+  <footer class="site-footer">Formulário de Escuta Organizacional</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 3: REVIEW (intermediate)
+══════════════════════════════════════════════ -->
+<div id="page-review" class="page">
+  <header class="site-header">
+    <div class="logo">Escuta Organizacional <span>RH</span></div>
+  </header>
+  <main class="confirm-main">
+    <div class="confirm-card">
+      <div class="review-icon-wrap">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M4 6h24M4 12h16M4 18h20M4 24h12"/></svg>
+      </div>
+      <h2 class="confirm-title" style="font-size:1.7rem">Conferir respostas</h2>
+      <p class="confirm-text">Antes de finalizar, confira se está tudo correto.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:0.5rem">
+        <button class="btn-outline" onclick="showPage('page-form')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 4L6 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Voltar para editar
+        </button>
+        <button class="btn-primary" onclick="finalizeForm()" style="max-width:100%">
+          Finalizar resposta
+          <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 4: FINAL CONFIRMATION
+══════════════════════════════════════════════ -->
+<div id="page-confirm" class="page">
+  <header class="site-header">
+    <div class="logo">Escuta Organizacional <span>RH</span></div>
+  </header>
+  <main class="confirm-main">
+    <div class="confirm-card">
+      <div class="confirm-icon-wrap">
+        <svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16l8 8 12-12" stroke="currentColor" stroke-width="2.5"/></svg>
+      </div>
+      <h2 class="confirm-title">Resposta enviada com sucesso!</h2>
+      <p class="confirm-text">
+        Obrigado por participar. Sua resposta foi registrada.<br><br>
+        Sua contribuição é importante para compreender melhor o ambiente organizacional.
+      </p>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 4: ADMIN LOGIN
+══════════════════════════════════════════════ -->
+<div id="page-admin-login" class="page">
+  <header class="site-header">
+    <div class="logo">Escuta Organizacional <span>Painel Admin</span></div>
+  </header>
+  <main class="admin-login-main">
+    <div class="login-card">
+      <div class="login-card-top">
+        <div class="lock-icon">
+          <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M7 9V6a3 3 0 116 0v3"/></svg>
+        </div>
+        <h2>Área Administrativa</h2>
+        <p>Acesso restrito a administradores</p>
+      </div>
+      <div class="login-card-body">
+        <div class="login-error" id="loginError">E-mail ou senha inválidos.</div>
+        <div class="form-field">
+          <label>E-mail</label>
+          <input type="email" id="adminUser" placeholder="admin@empresa.com" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label>Senha</label>
+          <input type="password" id="adminPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+        </div>
+        <button class="btn-primary" onclick="adminLogin()" style="margin-top:0.5rem">
+          Entrar no painel
+          <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 5: ADMIN DASHBOARD
+══════════════════════════════════════════════ -->
+<div id="page-admin" class="page">
+  <header class="admin-header">
+    <div class="logo">Painel Administrativo — Escuta Organizacional</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-export" onclick="exportData()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12"/></svg>
+        Exportar JSON
+      </button>
+      <button class="btn-logout" onclick="adminLogout()">Sair</button>
+    </div>
+  </header>
+  <main class="admin-main">
+    <!-- Metrics -->
+    <h2 class="admin-section-title">Visão Geral</h2>
+    <div class="metrics-grid" id="metricsGrid"></div>
+
+    <!-- Per-question charts -->
+    <h2 class="admin-section-title">Resultados por Pergunta</h2>
+    <div id="chartsContainer"></div>
+
+    <!-- Open answers -->
+    <h2 class="admin-section-title">Respostas Abertas — Pergunta 19</h2>
+    <div class="open-answers">
+      <div class="answer-list" id="openAnswersList"></div>
+    </div>
+
+    <!-- Scale distribution -->
+    <h2 class="admin-section-title">Escala de Recomendação (Pergunta 20)</h2>
+    <div class="chart-card" style="max-width:600px">
+      <div class="chart-card-title">Distribuição das notas — 0 a 10</div>
+      <div class="scale-distribution" id="scaleDistribution"></div>
+      <div class="scale-avg-row">
+        <span class="scale-avg-label">Média geral</span>
+        <span class="scale-avg-val" id="scaleAvg">—</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════
+const SUPABASE_URL = "https://vaauxknqxyugdoqqjxgi.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhdXV4a25xeHl1Z2RvcXFqeGdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ5MDA0NDksImV4cCI6MjAyOTgxNjQ0OX0.LgKuhljqGIC_fOADnUAocUml9O65RMPA9CBvEGQHN9E";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function registerEvent(type) {
+  try { await supabaseClient.from('form_events').insert({ event_type: type }); }
+  catch(e) { /* silencioso — configura RLS no Supabase se quiser rastrear */ }
+}
+registerEvent('access');
+
+// ═══════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+async function startForm() {
+  await registerEvent('started');
+  showPage('page-form');
+}
+
+function checkAdminSession() {
+  showPage('page-admin-login');
+}
+
+function checkRoute() {
+  if (location.hash === '#admin') checkAdminSession();
+}
+window.addEventListener('hashchange', checkRoute);
+checkRoute();
+
+// ═══════════════════════════════
+// FORM LOGIC
+// ═══════════════════════════════
+let scaleValue = null;
+const TOTAL_Q = 20;
+
+document.querySelectorAll('.radio-option input[type="radio"]').forEach(input => {
+  input.addEventListener('change', function() {
+    const group = this.closest('.radio-group');
+    group.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+    this.closest('.radio-option').classList.add('selected');
+    this.closest('.question-block').classList.remove('has-error');
+    updateProgress();
+  });
+});
+
+function selectScale(val) {
+  scaleValue = val;
+  document.querySelectorAll('#scale-q20 .scale-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i === val);
+  });
+  document.getElementById('qblock-q20').classList.remove('has-error');
+  updateProgress();
+}
+
+function getAnswered() {
+  let count = 0;
+  for (let i = 1; i <= 18; i++) {
+    if (document.querySelector(`input[name="q${i}"]:checked`)) count++;
+  }
+  if (document.getElementById('q19').value.trim()) count++;
+  if (scaleValue !== null) count++;
+  return count;
+}
+
+function updateProgress() {
+  const answered = getAnswered();
+  const pct = Math.round((answered / TOTAL_Q) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('formCount').textContent = `${answered} de ${TOTAL_Q} respondidas`;
+}
+
+function submitForm() {
+  const errors = [];
+  for (let i = 1; i <= 18; i++) {
+    const block = document.getElementById(`qblock-q${i}`);
+    if (!document.querySelector(`input[name="q${i}"]:checked`)) { block.classList.add('has-error'); errors.push(block); }
+    else block.classList.remove('has-error');
+  }
+  const block19 = document.getElementById('qblock-q19');
+  if (!document.getElementById('q19').value.trim()) { block19.classList.add('has-error'); errors.push(block19); }
+  else block19.classList.remove('has-error');
+  const block20 = document.getElementById('qblock-q20');
+  if (scaleValue === null) { block20.classList.add('has-error'); errors.push(block20); }
+  else block20.classList.remove('has-error');
+  const alertEl = document.getElementById('validationAlert');
+  if (errors.length > 0) {
+    alertEl.classList.add('visible');
+    errors[0].classList.add('shake');
+    errors[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => errors[0].classList.remove('shake'), 400);
+    return;
+  }
+  alertEl.classList.remove('visible');
+  showPage('page-review');
+}
+
+async function finalizeForm() {
+  const resp = {};
+  for (let i = 1; i <= 18; i++) {
+    resp[`q${i}`] = document.querySelector(`input[name="q${i}"]:checked`).value;
+  }
+  resp.q19 = document.getElementById('q19').value.trim();
+  resp.q20 = String(scaleValue);
+  const btn = document.querySelector('#page-review .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try {
+    const { error } = await supabaseClient.from('form_responses').insert({
+      responses: resp,
+      q19_open: resp.q19,
+      q20_score: scaleValue
+    });
+    if (error) throw error;
+    await registerEvent('completed');
+    showPage('page-confirm');
+  } catch(e) {
+    console.error('Erro ao salvar:', e);
+    if (btn) { btn.disabled = false; btn.textContent = 'Finalizar resposta'; }
+    alert('Erro ao salvar resposta. Tente novamente.');
+  }
+}
+
+// ═══════════════════════════════
+// ADMIN AUTH — credenciais locais
+// ═══════════════════════════════
+const ADMIN_CREDS = { user: 'admin', pass: 'escuta2024' };
+
+function adminLogin() {
+  const user = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const err  = document.getElementById('loginError');
+  err.classList.remove('visible');
+  if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
+    showPage('page-admin');
+    renderDashboard();
+  } else {
+    err.textContent = 'Usuário ou senha inválidos.';
+    err.classList.add('visible');
+    document.getElementById('adminPass').value = '';
+  }
+}
+
+function adminLogout() {
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  showPage('page-cover');
+  location.hash = '';
+}
+
+// ═══════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════
+const QUESTIONS = [
+  { id: 'q1',  label: 'Como você avalia o ambiente de trabalho?' },
+  { id: 'q2',  label: 'Você se sente respeitado(a) no trabalho?' },
+  { id: 'q3',  label: 'Existe abertura para diálogo com a liderança?' },
+  { id: 'q4',  label: 'O ambiente favorece o trabalho em equipe?' },
+  { id: 'q5',  label: 'Recebeu treinamento ao iniciar?' },
+  { id: 'q6',  label: 'A empresa oferece treinamentos atualmente?' },
+  { id: 'q7',  label: 'Você se sente preparado(a) para o cargo?' },
+  { id: 'q8',  label: 'Cobranças alinhadas com o preparo oferecido?' },
+  { id: 'q9',  label: 'Como avalia seu bem-estar no trabalho?' },
+  { id: 'q10', label: 'Você já se sentiu sobrecarregado(a)?' },
+  { id: 'q11', label: 'Empresa demonstra preocupação com bem-estar?' },
+  { id: 'q12', label: 'Consegue manter equilíbrio trabalho/vida pessoal?' },
+  { id: 'q13', label: 'Você se sente bem informado(a) sobre a empresa?' },
+  { id: 'q14', label: 'Informações são comunicadas com clareza?' },
+  { id: 'q15', label: 'Você se sente valorizado(a) pelo trabalho?' },
+  { id: 'q16', label: 'A empresa realiza ações internas?' },
+  { id: 'q17', label: 'Você enxerga oportunidades de crescimento?' },
+  { id: 'q18', label: 'Tem clareza sobre funções e responsabilidades?' },
+];
+
+async function renderDashboard() {
+  document.getElementById('metricsGrid').innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem;grid-column:1/-1">Carregando...</p>';
+  const [eventsRes, responsesRes] = await Promise.all([
+    supabaseClient.from('form_events').select('*'),
+    supabaseClient.from('form_responses').select('*')
+  ]);
+  if (eventsRes.error) {
+    document.getElementById('metricsGrid').innerHTML = `<p style="color:var(--error);grid-column:1/-1">Erro: ${eventsRes.error.message}</p>`;
+    return;
+  }
+  const events = eventsRes.data || [];
+  const responses = responsesRes.data || [];
+  const accesses = events.filter(e => e.event_type === 'access').length;
+  const started = events.filter(e => e.event_type === 'started').length;
+  const completed = events.filter(e => e.event_type === 'completed').length;
+  const completionRate = started > 0 ? Math.round((completed / started) * 100) : 0;
+  const n = responses.length;
+  document.getElementById('metricsGrid').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Acessos totais</div><div class="metric-value">${accesses}</div><div class="metric-sub">Visitas ao site</div></div>
+    <div class="metric-card"><div class="metric-label">Formulários iniciados</div><div class="metric-value">${started}</div><div class="metric-sub">Clicaram em "Começar"</div></div>
+    <div class="metric-card"><div class="metric-label">Formulários concluídos</div><div class="metric-value">${completed}</div><div class="metric-sub">Enviaram respostas</div></div>
+    <div class="metric-card accent-card"><div class="metric-label">Taxa de conclusão</div><div class="metric-value">${completionRate}%</div><div class="metric-sub">${n} resposta${n!==1?'s':''} registrada${n!==1?'s':''}</div></div>`;
+  const grid = document.createElement('div');
+  grid.className = 'admin-grid'; grid.style.marginBottom = '2.5rem';
+  QUESTIONS.forEach(q => {
+    const counts = {};
+    responses.forEach(r => { const v = r.responses?.[q.id]; if (v !== undefined) counts[v] = (counts[v]||0)+1; });
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    let barsHTML = total===0 ? '<p style="font-size:0.8rem;color:var(--text-muted)">Nenhuma resposta ainda.</p>' : sorted.map(([label,count])=>{
+      const pct=Math.round((count/total)*100);
+      return `<div class="bar-row"><div class="bar-label">${label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%">${pct>15?`<span>${count}</span>`:''}</div></div><div class="bar-pct">${pct}%</div></div>`;
+    }).join('');
+    const card = document.createElement('div'); card.className='chart-card';
+    card.innerHTML = `<div class="chart-card-title">${q.label.length>55?q.label.substring(0,55)+'…':q.label}</div>${barsHTML}`;
+    grid.appendChild(card);
+  });
+  document.getElementById('chartsContainer').innerHTML=''; document.getElementById('chartsContainer').appendChild(grid);
+  const openAnswers = responses.map(r=>r.q19_open).filter(a=>a&&a.trim());
+  document.getElementById('openAnswersList').innerHTML = openAnswers.length===0
+    ? '<div class="empty-state">Nenhuma resposta aberta registrada ainda.</div>'
+    : openAnswers.map(a=>`<div class="answer-item">${escapeHTML(a)}</div>`).join('');
+  const scaleCounts = new Array(11).fill(0);
+  responses.forEach(r => { if (r.q20_score!=null) scaleCounts[r.q20_score]++; });
+  const maxCount = Math.max(...scaleCounts,1);
+  const scaleTotal = scaleCounts.reduce((a,b)=>a+b,0);
+  let weightedSum=0; scaleCounts.forEach((c,i)=>weightedSum+=c*i);
+  const avg = scaleTotal>0?(weightedSum/scaleTotal).toFixed(1):'—';
+  document.getElementById('scaleDistribution').innerHTML = scaleCounts.map((c,i)=>{
+    const h=maxCount>0?Math.round((c/maxCount)*100):0;
+    return `<div class="scale-bar-wrap"><div style="flex:1;display:flex;align-items:flex-end;width:100%"><div class="scale-bar-fill" style="height:${h}%;min-height:${c>0?4:0}px"></div></div><div class="scale-bar-num">${i}</div></div>`;
+  }).join('');
+  document.getElementById('scaleAvg').textContent = avg;
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function exportData() {
+  const [eventsRes, responsesRes] = await Promise.all([
+    supabaseClient.from('form_events').select('*'),
+    supabaseClient.from('form_responses').select('*')
+  ]);
+  const blob = new Blob([JSON.stringify({events:eventsRes.data||[],responses:responsesRes.data||[]},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=`escuta-organizacional-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+if (location.hash==='#admin') checkAdminSession();
+</script>
+</body>
+</html>

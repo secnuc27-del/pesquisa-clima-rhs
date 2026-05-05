@@ -1595,11 +1595,8 @@ function exportWord() {
     { title: '5. Reconhecimento e Crescimento',     ids: ['q15','q16','q17','q18'] },
   ];
 
-  function barText(pct) {
-    const filled = Math.round(pct / 5);
-    return '█'.repeat(filled) + '░'.repeat(20-filled) + ` ${pct}%`;
-  }
-
+  // ── Gera linhas da tabela de resultados por pergunta ──
+  // Usa células coloridas proporcionais ao percentual (sem Unicode bars)
   let sectionsHTML = '';
   sections.forEach(sec => {
     let questionsHTML = '';
@@ -1608,148 +1605,199 @@ function exportWord() {
       if (!q) return;
       let rows = '';
       if (q.total === 0) {
-        rows = `<tr><td colspan="3" style="color:#888;font-style:italic;padding:6px 12px">Sem respostas</td></tr>`;
+        rows = `<tr><td colspan="4" style="padding:8px 10px;font-style:italic;color:#888;font-size:11pt;border:1px solid #dde3ea">Sem respostas</td></tr>`;
       } else {
-        q.sorted.forEach(([label, count]) => {
+        // Cabeçalho da tabela de opções
+        rows += `<tr style="background:#1e3a5f">
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:44%">Opção de resposta</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:center;border:1px solid #163152;width:12%">Qtd.</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:center;border:1px solid #163152;width:10%">%</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:34%">Proporção visual</th>
+        </tr>`;
+        q.sorted.forEach(([label, count], idx) => {
           const pct = Math.round((count/q.total)*100);
-          rows += `
-            <tr>
-              <td style="padding:7px 14px;border-bottom:1px solid #eee;width:38%">${label}</td>
-              <td style="padding:7px 14px;border-bottom:1px solid #eee;font-family:Consolas,monospace;font-size:11px;color:#1e3a5f;letter-spacing:0">${barText(pct)}</td>
-              <td style="padding:7px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:#1e3a5f;white-space:nowrap">${count} resp.</td>
-            </tr>`;
+          const rowBg = idx % 2 === 0 ? '#f7f9fc' : '#ffffff';
+          // Barra visual usando tabela aninhada — compatível com Word
+          const barFilled = Math.round(pct / 5); // 0–20 células preenchidas
+          const barEmpty  = 20 - barFilled;
+          const barCells  = (barFilled > 0 ? `<td style="background:#1e3a5f;width:${barFilled * 5}%;height:14px;font-size:1px">&nbsp;</td>` : '')
+                          + (barEmpty  > 0 ? `<td style="background:#dde3ea;width:${barEmpty  * 5}%;height:14px;font-size:1px">&nbsp;</td>` : '');
+          rows += `<tr style="background:${rowBg}">
+            <td style="padding:8px 10px;font-size:11pt;color:#222222;border:1px solid #dde3ea;vertical-align:middle">${label}</td>
+            <td style="padding:8px 10px;font-size:11pt;color:#1e3a5f;font-weight:bold;text-align:center;border:1px solid #dde3ea;vertical-align:middle">${count}</td>
+            <td style="padding:8px 10px;font-size:11pt;color:#1e3a5f;font-weight:bold;text-align:center;border:1px solid #dde3ea;vertical-align:middle">${pct}%</td>
+            <td style="padding:6px 10px;border:1px solid #dde3ea;vertical-align:middle">
+              <table style="width:100%;border-collapse:collapse;height:14px"><tr>${barCells}</tr></table>
+            </td>
+          </tr>`;
         });
       }
       questionsHTML += `
-        <div style="margin-bottom:22px">
-          <p style="margin:0 0 8px 0;font-weight:600;color:#1e3a5f;font-size:13px">${q.label}</p>
-          <table style="width:100%;border-collapse:collapse;background:#fafafa;border-radius:6px;overflow:hidden;font-size:12px">
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
+        <p style="margin:12px 0 4px 0;font-weight:bold;color:#1e3a5f;font-size:11pt">${q.label}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:11pt;margin-bottom:16px">
+          <tbody>${rows}</tbody>
+        </table>`;
     });
 
     sectionsHTML += `
-      <div style="margin-bottom:32px">
-        <h2 style="font-size:15px;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin:0 0 18px 0">${sec.title}</h2>
-        ${questionsHTML}
-      </div>`;
+      <h2 style="font-size:13pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4px;margin:20px 0 12px 0">${sec.title}</h2>
+      ${questionsHTML}`;
   });
 
-  // Respostas abertas
-  let openHTML = openAnswers.length === 0
-    ? '<p style="color:#888;font-style:italic;font-size:12px">Nenhuma resposta registrada.</p>'
-    : openAnswers.map((a,i) => `
-        <div style="margin-bottom:10px;padding:10px 14px;background:#f7f8fa;border-left:3px solid #1e3a5f;border-radius:0 6px 6px 0">
-          <span style="font-size:10px;color:#888;display:block;margin-bottom:3px">Resposta ${i+1}</span>
-          <span style="font-size:12px;color:#222">${a}</span>
-        </div>`).join('');
+  // ── Respostas abertas ──
+  let openHTML = '';
+  if (openAnswers.length === 0) {
+    openHTML = '<p style="color:#888;font-style:italic;font-size:11pt">Nenhuma resposta registrada.</p>';
+  } else {
+    openHTML = '<table style="width:100%;border-collapse:collapse;font-size:11pt">';
+    openAnswers.forEach((a, i) => {
+      const rowBg = i % 2 === 0 ? '#f7f9fc' : '#ffffff';
+      openHTML += `<tr style="background:${rowBg}">
+        <td style="padding:4px 10px;width:32px;color:#888;font-size:10pt;border:1px solid #dde3ea;text-align:center;vertical-align:top">${i+1}</td>
+        <td style="padding:8px 12px;color:#222;border:1px solid #dde3ea;border-left:3px solid #1e3a5f;vertical-align:top">${a}</td>
+      </tr>`;
+    });
+    openHTML += '</table>';
+  }
 
-  // Escala
+  // ── Escala de recomendação ──
   let scaleRows = '';
-  scaleCounts.forEach((c,i) => {
+  scaleCounts.forEach((c, i) => {
     if (c === 0) return;
     const pct = scaleTotal > 0 ? Math.round((c/scaleTotal)*100) : 0;
-    scaleRows += `
-      <tr>
-        <td style="padding:6px 14px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:#1e3a5f;width:60px">Nota ${i}</td>
-        <td style="padding:6px 14px;border-bottom:1px solid #eee;font-family:Consolas,monospace;font-size:11px;color:#1e3a5f">${barText(pct)}</td>
-        <td style="padding:6px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:600;white-space:nowrap">${c} resp.</td>
-      </tr>`;
+    const barFilled = Math.round(pct / 5);
+    const barEmpty  = 20 - barFilled;
+    const barCells  = (barFilled > 0 ? `<td style="background:#1e3a5f;width:${barFilled*5}%;height:14px;font-size:1px">&nbsp;</td>` : '')
+                    + (barEmpty  > 0 ? `<td style="background:#dde3ea;width:${barEmpty*5}%;height:14px;font-size:1px">&nbsp;</td>` : '');
+    const rowBg = i % 2 === 0 ? '#f7f9fc' : '#ffffff';
+    scaleRows += `<tr style="background:${rowBg}">
+      <td style="padding:8px 10px;font-size:11pt;font-weight:bold;color:#1e3a5f;text-align:center;border:1px solid #dde3ea;width:70px">Nota ${i}</td>
+      <td style="padding:8px 10px;font-size:11pt;color:#1e3a5f;font-weight:bold;text-align:center;border:1px solid #dde3ea;width:50px">${c}</td>
+      <td style="padding:8px 10px;font-size:11pt;font-weight:bold;color:#1e3a5f;text-align:center;border:1px solid #dde3ea;width:50px">${pct}%</td>
+      <td style="padding:6px 10px;border:1px solid #dde3ea">
+        <table style="width:100%;border-collapse:collapse;height:14px"><tr>${barCells}</tr></table>
+      </td>
+    </tr>`;
   });
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
 <meta charset="UTF-8">
 <title>Relatório de Escuta Organizacional</title>
-<!--[if gte mso 9]>
-<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
-<![endif]-->
+<!--[if gte mso 9]><xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml><![endif]-->
 <style>
-  @page { margin: 2cm 2.5cm; }
-  body { font-family: Calibri, Arial, sans-serif; font-size: 12px; color: #222; line-height: 1.6; }
-  h1 { font-size: 22px; color: #1e3a5f; margin: 0 0 6px 0; }
-  h2 { font-size: 15px; color: #1e3a5f; page-break-after: avoid; }
-  table { border-collapse: collapse; width: 100%; }
+  @page Section1 { margin: 2cm 2.5cm 2cm 2.5cm; mso-header-margin: 1cm; mso-footer-margin: 1cm; }
+  div.Section1 { page: Section1; }
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222222; line-height: 1.5; }
+  h1 { font-size: 20pt; color: #1e3a5f; }
+  h2 { font-size: 13pt; color: #1e3a5f; page-break-after: avoid; }
+  table { border-collapse: collapse; }
+  p { margin: 0 0 6pt 0; }
   .page-break { page-break-before: always; }
 </style>
 </head>
 <body>
+<div class="Section1">
 
-<!-- CAPA -->
-<div style="text-align:center;padding:60px 0 40px 0;border-bottom:3px solid #1e3a5f;margin-bottom:36px">
-  <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:16px">Relatório Oficial</div>
-  <h1 style="font-size:26px;margin:0 0 8px 0;color:#1e3a5f">Formulário de Escuta Organizacional</h1>
-  <div style="font-size:14px;color:#555;margin-bottom:24px">Técnico em Recursos Humanos</div>
-  <div style="display:inline-block;background:#f0f4f8;border-radius:8px;padding:14px 28px;font-size:12px;color:#1e3a5f">
-    <strong>Data de emissão:</strong> ${date} &nbsp;|&nbsp; <strong>Total de respostas:</strong> ${n}
-  </div>
-</div>
-
-<!-- MÉTRICAS -->
-<h2 style="font-size:16px;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin:0 0 18px 0">Visão Geral</h2>
-<table style="margin-bottom:32px">
+<!-- ══ CAPA ══ -->
+<table style="width:100%;border-collapse:collapse;border-bottom:3px solid #1e3a5f;margin-bottom:24pt">
   <tr>
-    <td style="width:25%;padding:16px;background:#f0f4f8;border-radius:8px;text-align:center;border:1px solid #dde3ea">
-      <div style="font-size:28px;font-weight:700;color:#1e3a5f">${metrics.accesses}</div>
-      <div style="font-size:10px;text-transform:uppercase;color:#666;letter-spacing:1px;margin-top:4px">Acessos totais</div>
-    </td>
-    <td style="width:4%"></td>
-    <td style="width:25%;padding:16px;background:#f0f4f8;border-radius:8px;text-align:center;border:1px solid #dde3ea">
-      <div style="font-size:28px;font-weight:700;color:#1e3a5f">${metrics.started}</div>
-      <div style="font-size:10px;text-transform:uppercase;color:#666;letter-spacing:1px;margin-top:4px">Formulários iniciados</div>
-    </td>
-    <td style="width:4%"></td>
-    <td style="width:25%;padding:16px;background:#f0f4f8;border-radius:8px;text-align:center;border:1px solid #dde3ea">
-      <div style="font-size:28px;font-weight:700;color:#1e3a5f">${metrics.completed}</div>
-      <div style="font-size:10px;text-transform:uppercase;color:#666;letter-spacing:1px;margin-top:4px">Concluídos</div>
-    </td>
-    <td style="width:4%"></td>
-    <td style="width:13%;padding:16px;background:#1e3a5f;border-radius:8px;text-align:center">
-      <div style="font-size:28px;font-weight:700;color:#fff">${completionRate}%</div>
-      <div style="font-size:10px;text-transform:uppercase;color:#a0b4c8;letter-spacing:1px;margin-top:4px">Taxa conclusão</div>
+    <td style="padding:36pt 0 24pt 0;text-align:center">
+      <p style="font-size:9pt;letter-spacing:2px;text-transform:uppercase;color:#888888;margin-bottom:10pt">Relatório Oficial</p>
+      <p style="font-size:20pt;font-weight:bold;color:#1e3a5f;margin-bottom:6pt">Formulário de Escuta Organizacional</p>
+      <p style="font-size:12pt;color:#555555;margin-bottom:18pt">Técnico em Recursos Humanos</p>
+      <table style="border-collapse:collapse;margin:0 auto">
+        <tr>
+          <td style="padding:10pt 20pt;background:#f0f4f8;border:1px solid #dde3ea;font-size:11pt;color:#1e3a5f">
+            <b>Data de emissão:</b> ${date} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Total de respostas:</b> ${n}
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
 
-<!-- RESULTADOS POR SEÇÃO -->
+<!-- ══ VISÃO GERAL ══ -->
+<h2 style="font-size:14pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4pt;margin:0 0 14pt 0">Visão Geral</h2>
+<table style="width:100%;border-collapse:separate;border-spacing:8px;margin-bottom:24pt;table-layout:fixed">
+  <tr>
+    <td style="width:23%;padding:14pt 10pt;background:#f0f4f8;border:1px solid #dde3ea;text-align:center;vertical-align:middle">
+      <p style="font-size:22pt;font-weight:bold;color:#1e3a5f;margin:0">${metrics.accesses}</p>
+      <p style="font-size:9pt;text-transform:uppercase;color:#666666;letter-spacing:1px;margin:4pt 0 0 0">Acessos totais</p>
+    </td>
+    <td style="width:23%;padding:14pt 10pt;background:#f0f4f8;border:1px solid #dde3ea;text-align:center;vertical-align:middle">
+      <p style="font-size:22pt;font-weight:bold;color:#1e3a5f;margin:0">${metrics.started}</p>
+      <p style="font-size:9pt;text-transform:uppercase;color:#666666;letter-spacing:1px;margin:4pt 0 0 0">Formulários iniciados</p>
+    </td>
+    <td style="width:23%;padding:14pt 10pt;background:#f0f4f8;border:1px solid #dde3ea;text-align:center;vertical-align:middle">
+      <p style="font-size:22pt;font-weight:bold;color:#1e3a5f;margin:0">${metrics.completed}</p>
+      <p style="font-size:9pt;text-transform:uppercase;color:#666666;letter-spacing:1px;margin:4pt 0 0 0">Concluídos</p>
+    </td>
+    <td style="width:23%;padding:14pt 10pt;background:#1e3a5f;border:1px solid #163152;text-align:center;vertical-align:middle">
+      <p style="font-size:22pt;font-weight:bold;color:#ffffff;margin:0">${completionRate}%</p>
+      <p style="font-size:9pt;text-transform:uppercase;color:#a0b4c8;letter-spacing:1px;margin:4pt 0 0 0">Taxa de conclusão</p>
+    </td>
+  </tr>
+</table>
+
+<!-- ══ RESULTADOS POR PERGUNTA ══ -->
 <div class="page-break">
-  <h2 style="font-size:16px;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin:0 0 24px 0">Resultados por Pergunta</h2>
+  <h2 style="font-size:14pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4pt;margin:0 0 16pt 0">Resultados por Pergunta</h2>
   ${sectionsHTML}
 </div>
 
-<!-- RESPOSTAS ABERTAS -->
+<!-- ══ RESPOSTAS ABERTAS ══ -->
 <div class="page-break">
-  <h2 style="font-size:16px;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin:0 0 18px 0">Respostas Abertas — Pergunta 19</h2>
-  <p style="font-size:11px;color:#666;margin:0 0 16px 0">O que você considera mais importante para melhorar o ambiente de trabalho?</p>
+  <h2 style="font-size:14pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4pt;margin:0 0 10pt 0">Respostas Abertas — Pergunta 19</h2>
+  <p style="font-size:10pt;color:#666666;margin:0 0 12pt 0">O que você considera mais importante para melhorar o ambiente de trabalho?</p>
   ${openHTML}
 </div>
 
-<!-- ESCALA DE RECOMENDAÇÃO -->
+<!-- ══ ESCALA DE RECOMENDAÇÃO ══ -->
 <div class="page-break">
-  <h2 style="font-size:16px;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin:0 0 18px 0">Escala de Recomendação — Pergunta 20</h2>
-  <p style="font-size:11px;color:#666;margin:0 0 6px 0">Em uma escala de 0 a 10, o quanto você recomendaria esta empresa como um bom lugar para trabalhar?</p>
-  <div style="display:inline-block;background:#f0f4f8;border-radius:8px;padding:10px 20px;margin-bottom:16px;font-size:13px">
-    <strong style="color:#1e3a5f">Média geral: ${avg}</strong> &nbsp;|&nbsp; ${scaleTotal} respostas
-  </div>
-  <table style="font-size:12px;background:#fafafa;border-radius:6px">
-    <tbody>${scaleRows || '<tr><td colspan="3" style="padding:10px 14px;color:#888;font-style:italic">Nenhuma resposta registrada.</td></tr>'}</tbody>
+  <h2 style="font-size:14pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4pt;margin:0 0 10pt 0">Escala de Recomendação — Pergunta 20</h2>
+  <p style="font-size:10pt;color:#666666;margin:0 0 8pt 0">Em uma escala de 0 a 10, o quanto você recomendaria esta empresa como um bom lugar para trabalhar?</p>
+  <table style="border-collapse:collapse;margin-bottom:14pt">
+    <tr>
+      <td style="padding:8pt 18pt;background:#f0f4f8;border:1px solid #dde3ea;font-size:12pt;color:#1e3a5f">
+        <b>Média geral: ${avg}</b> &nbsp;&nbsp;|&nbsp;&nbsp; ${scaleTotal} respostas
+      </td>
+    </tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;font-size:11pt">
+    <tr style="background:#1e3a5f">
+      <th style="padding:6pt 10pt;color:#fff;text-align:center;border:1px solid #163152;width:70px">Nota</th>
+      <th style="padding:6pt 10pt;color:#fff;text-align:center;border:1px solid #163152;width:50px">Qtd.</th>
+      <th style="padding:6pt 10pt;color:#fff;text-align:center;border:1px solid #163152;width:50px">%</th>
+      <th style="padding:6pt 10pt;color:#fff;text-align:left;border:1px solid #163152">Proporção</th>
+    </tr>
+    ${scaleRows || '<tr><td colspan="4" style="padding:10pt;color:#888;font-style:italic;border:1px solid #dde3ea">Nenhuma resposta registrada.</td></tr>'}
   </table>
 </div>
 
-<!-- RODAPÉ -->
-<div style="margin-top:48px;padding-top:16px;border-top:1px solid #ddd;font-size:10px;color:#999;text-align:center">
-  Relatório gerado automaticamente pelo sistema de Escuta Organizacional — ${date}
-</div>
+<!-- ══ RODAPÉ ══ -->
+<table style="width:100%;border-collapse:collapse;border-top:1px solid #dddddd;margin-top:36pt">
+  <tr>
+    <td style="padding:10pt 0;text-align:center;font-size:9pt;color:#999999">
+      Relatório gerado automaticamente pelo sistema de Escuta Organizacional — ${date}
+    </td>
+  </tr>
+</table>
 
+</div>
 </body>
 </html>`;
 
-  const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
+  const blob = new Blob(['\uFEFF' + html], { type: 'application/msword;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

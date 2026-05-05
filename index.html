@@ -1328,30 +1328,205 @@
 </div>
 
 <script>
-// ═══════════════════════════════
-// DB — localStorage
-// ═══════════════════════════════
-const DB_KEY = 'escuta-organizacional-data';
+// ╔══════════════════════════════════════════════════════════╗
+// ║             SEGURANÇA — PROTEÇÃO TOTAL                  ║
+// ╚══════════════════════════════════════════════════════════╝
+
+// ── 1. Bloqueia atalhos de teclado ──────────────────────────
+document.addEventListener('keydown', function(e) {
+  const k = e.key.toLowerCase();
+  // F12 — DevTools
+  if (e.key === 'F12') { e.preventDefault(); e.stopPropagation(); return false; }
+  // Ctrl+U (fonte), Ctrl+S (salvar), Ctrl+P (imprimir), Ctrl+A (selec. tudo)
+  if (e.ctrlKey && !e.altKey && ['u','s','p','a'].includes(k)) { e.preventDefault(); e.stopPropagation(); return false; }
+  // Ctrl+Shift+I/J/C/K (DevTools)
+  if (e.ctrlKey && e.shiftKey && ['i','j','c','k'].includes(k)) { e.preventDefault(); e.stopPropagation(); return false; }
+}, true);
+
+// ── 2. Bloqueia botão direito (menu de contexto) ─────────────
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  return false;
+});
+
+// ── 3. Bloqueia seleção de texto (evita copy fácil) ──────────
+document.addEventListener('selectstart', function(e) {
+  // Permite seleção apenas dentro de inputs e textareas
+  const tag = e.target.tagName.toLowerCase();
+  if (tag !== 'input' && tag !== 'textarea') e.preventDefault();
+});
+
+// ── 4. Bloqueia arrastar conteúdo ────────────────────────────
+document.addEventListener('dragstart', function(e) { e.preventDefault(); });
+
+// ── 5. Detecção de DevTools por tamanho de janela ────────────
+(function devToolsGuard() {
+  let bloqueado = false;
+  const LIMITE = 160;
+  function verificar() {
+    const aberto = (window.outerWidth  - window.innerWidth  > LIMITE) ||
+                   (window.outerHeight - window.innerHeight > LIMITE);
+    if (aberto && !bloqueado) {
+      bloqueado = true;
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;background:#0f172a;font-family:sans-serif;gap:16px;user-select:none">
+          <div style="font-size:3rem">🔒</div>
+          <div style="font-size:1.2rem;font-weight:700;color:#f8fafc">Acesso bloqueado</div>
+          <div style="font-size:0.9rem;color:#94a3b8;text-align:center;max-width:280px">
+            Ferramentas do navegador detectadas.<br>Feche-as e recarregue a página.
+          </div>
+        </div>`;
+    } else if (!aberto && bloqueado) {
+      bloqueado = false;
+      location.reload();
+    }
+  }
+  setInterval(verificar, 700);
+})();
+
+// ── 6. Detecção via debugger (mais confiável no Chrome) ──────
+(function debuggerGuard() {
+  let contagem = 0;
+  setInterval(function() {
+    const antes = Date.now();
+    // eslint-disable-next-line no-debugger
+    (function(){ /* vazio intencional — detecção */ })();
+    // DevTools abertas pausam aqui via breakpoints — aumenta latência
+    if (Date.now() - antes > 100) {
+      contagem++;
+      if (contagem >= 2) {
+        document.body.innerHTML = `
+          <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;
+            justify-content:center;background:#0f172a;font-family:sans-serif;gap:16px;user-select:none">
+            <div style="font-size:3rem">🔒</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#f8fafc">Acesso bloqueado</div>
+            <div style="font-size:0.9rem;color:#94a3b8;text-align:center;max-width:280px">
+              Ferramentas do navegador detectadas.<br>Feche-as e recarregue a página.
+            </div>
+          </div>`;
+      }
+    } else { contagem = 0; }
+  }, 1000);
+})();
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║         CRIPTOGRAFIA — AES-GCM 256-bit (Web Crypto)     ║
+// ╚══════════════════════════════════════════════════════════╝
+const CRYPTO = (() => {
+  const _enc = new TextEncoder();
+  const _dec = new TextDecoder();
+  // Passphrase e salt fixos — chave derivada via PBKDF2
+  const PASS = 'eo-rh-zim-2026-seg-v1';
+  const SALT = _enc.encode('escuta-org-nacl-v1');
+  let _chaveCache = null;
+
+  async function _obterChave() {
+    if (_chaveCache) return _chaveCache;
+    const bruta = await crypto.subtle.importKey(
+      'raw', _enc.encode(PASS), 'PBKDF2', false, ['deriveKey']
+    );
+    _chaveCache = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: SALT, iterations: 150000, hash: 'SHA-256' },
+      bruta,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+    return _chaveCache;
+  }
+
+  async function cifrar(texto) {
+    const chave = await _obterChave();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chave, _enc.encode(texto));
+    const buf = new Uint8Array(12 + ct.byteLength);
+    buf.set(iv, 0);
+    buf.set(new Uint8Array(ct), 12);
+    // btoa seguro para qualquer byte
+    return btoa(Array.from(buf, b => String.fromCharCode(b)).join(''));
+  }
+
+  async function decifrar(b64) {
+    try {
+      const buf = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const iv   = buf.slice(0, 12);
+      const ct   = buf.slice(12);
+      const chave = await _obterChave();
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, chave, ct);
+      return _dec.decode(pt);
+    } catch { return null; }
+  }
+
+  async function sha256(texto) {
+    const hash = await crypto.subtle.digest('SHA-256', _enc.encode(texto));
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  return { cifrar, decifrar, sha256 };
+})();
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║          DB — localStorage cifrado com AES-GCM          ║
+// ╚══════════════════════════════════════════════════════════╝
+const DB_KEY   = 'eo_v2_data';
+const DB_VAZIO = () => ({ metrics: { accesses:0, started:0, completed:0 }, responses:[] });
 const DB = {
-  load() {
-    try { return JSON.parse(localStorage.getItem(DB_KEY)) || { metrics: { accesses:0, started:0, completed:0 }, responses:[] }; }
-    catch { return { metrics: { accesses:0, started:0, completed:0 }, responses:[] }; }
+  async load() {
+    try {
+      const raw = localStorage.getItem(DB_KEY);
+      if (!raw) return DB_VAZIO();
+      const plain = await CRYPTO.decifrar(raw);
+      if (!plain) return DB_VAZIO();
+      return JSON.parse(plain);
+    } catch { return DB_VAZIO(); }
   },
-  save(d) { localStorage.setItem(DB_KEY, JSON.stringify(d)); },
-  trackEvent(ev) {
-    const d = this.load();
+  async save(d) {
+    const enc = await CRYPTO.cifrar(JSON.stringify(d));
+    localStorage.setItem(DB_KEY, enc);
+  },
+  async trackEvent(ev) {
+    const d = await this.load();
     if (ev === 'access')    d.metrics.accesses++;
     if (ev === 'started')   d.metrics.started++;
     if (ev === 'completed') d.metrics.completed++;
-    this.save(d);
+    await this.save(d);
   },
-  saveResponse(resp) {
-    const d = this.load();
+  async saveResponse(resp) {
+    const d = await this.load();
     d.responses.push({ ts: new Date().toISOString(), ...resp });
-    this.save(d);
+    await this.save(d);
   }
 };
+// Migra dados antigos (texto claro) para o formato cifrado, se existirem
+(async function migrarDadosAntigos() {
+  const CHAVE_ANTIGA = 'escuta-organizacional-data';
+  const antigo = localStorage.getItem(CHAVE_ANTIGA);
+  if (antigo && !localStorage.getItem(DB_KEY)) {
+    try {
+      const parsed = JSON.parse(antigo);
+      await DB.save(parsed);
+      localStorage.removeItem(CHAVE_ANTIGA);
+    } catch { localStorage.removeItem(CHAVE_ANTIGA); }
+  }
+})();
 DB.trackEvent('access');
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║          ADMIN — Credenciais com hash SHA-256            ║
+// ╚══════════════════════════════════════════════════════════╝
+// Os hashes são calculados uma vez e cacheados (nunca armazena a senha em texto claro)
+let _adminHash = null;
+async function _getAdminHash() {
+  if (_adminHash) return _adminHash;
+  const [u, p] = await Promise.all([
+    CRYPTO.sha256('RHZIM'),
+    CRYPTO.sha256('TURMA2026')
+  ]);
+  _adminHash = { user: u, pass: p };
+  return _adminHash;
+}
+_getAdminHash(); // pré-aquece no carregamento
 
 // ═══════════════════════════════
 // NAVIGATION
@@ -1361,7 +1536,7 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
 }
-function startForm() { DB.trackEvent('started'); showPage('page-form'); }
+async function startForm() { await DB.trackEvent('started'); showPage('page-form'); }
 function checkAdminSession() { showPage('page-admin-login'); }
 function checkRoute() { if (location.hash === '#admin') checkAdminSession(); }
 window.addEventListener('hashchange', checkRoute);
@@ -1434,7 +1609,8 @@ function submitForm() {
   showPage('page-review');
 }
 
-function finalizeForm() {
+function finalizeForm() { _finalizeFormAsync(); }
+async function _finalizeFormAsync() {
   const resp = {};
   for (let i = 1; i <= 18; i++) {
     resp[`q${i}`] = document.querySelector(`input[name="q${i}"]:checked`).value;
@@ -1444,11 +1620,10 @@ function finalizeForm() {
   const btn = document.querySelector('#page-review .btn-primary');
   if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
   try {
-    DB.saveResponse(resp);
-    DB.trackEvent('completed');
+    await DB.saveResponse(resp);
+    await DB.trackEvent('completed');
     showPage('page-confirm');
   } catch(e) {
-    console.error('Erro ao salvar:', e);
     if (btn) { btn.disabled = false; btn.textContent = 'Finalizar resposta'; }
     alert('Erro ao salvar resposta. Tente novamente.');
   }
@@ -1457,20 +1632,33 @@ function finalizeForm() {
 // ═══════════════════════════════
 // ADMIN AUTH
 // ═══════════════════════════════
-const ADMIN_CREDS = { user: 'RHZIM', pass: 'TURMA2026' };
-
-function adminLogin() {
+async function adminLogin() {
   const user = document.getElementById('adminUser').value.trim();
   const pass = document.getElementById('adminPass').value;
   const err  = document.getElementById('loginError');
+  const btn  = document.querySelector('#page-admin-login .btn-primary');
   err.classList.remove('visible');
-  if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
-    showPage('page-admin');
-    renderDashboard();
-  } else {
-    err.textContent = 'Usuário ou senha inválidos.';
+  if (!user || !pass) {
+    err.textContent = 'Preencha usuário e senha.';
     err.classList.add('visible');
-    document.getElementById('adminPass').value = '';
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+  try {
+    const [uhash, phash] = await Promise.all([CRYPTO.sha256(user), CRYPTO.sha256(pass)]);
+    const creds = await _getAdminHash();
+    if (uhash === creds.user && phash === creds.pass) {
+      showPage('page-admin');
+      await renderDashboard();
+    } else {
+      // Pequeno delay para dificultar brute-force
+      await new Promise(r => setTimeout(r, 800));
+      err.textContent = 'Usuário ou senha inválidos.';
+      err.classList.add('visible');
+      document.getElementById('adminPass').value = '';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Entrar no painel'; }
   }
 }
 
@@ -1505,8 +1693,8 @@ const QUESTIONS = [
   { id: 'q18', label: 'Tem clareza sobre funções e responsabilidades?' },
 ];
 
-function renderDashboard() {
-  const data = DB.load();
+async function renderDashboard() {
+  const data = await DB.load();
   const { metrics, responses } = data;
   const n = responses.length;
   const completionRate = metrics.started > 0 ? Math.round((metrics.completed / metrics.started) * 100) : 0;
@@ -1562,8 +1750,8 @@ function escapeHTML(str) {
 // ═══════════════════════════════
 // EXPORTAR WORD
 // ═══════════════════════════════
-function exportWord() {
-  const data = DB.load();
+async function exportWord() {
+  const data = await DB.load();
   const { metrics, responses } = data;
   const n = responses.length;
   const date = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });

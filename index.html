@@ -6,6 +6,7 @@
 <title>Formulário de Escuta Organizacional</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -879,6 +880,107 @@
     40%, 80% { transform: translateX(4px); }
   }
   .shake { animation: shake 0.35s ease; }
+
+  /* ── RESET BUTTON ── */
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--error-border);
+    color: var(--error);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn-reset:hover { background: var(--error-bg); }
+  .btn-reset svg { width: 14px; height: 14px; stroke: var(--error); fill: none; stroke-width: 2; }
+
+  /* ── UNDO TOAST ── */
+  .undo-toast {
+    position: fixed;
+    bottom: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1C1917;
+    color: #F5F5F4;
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    z-index: 999;
+    transition: bottom 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .undo-toast.visible { bottom: 2rem; }
+  .undo-toast-text { color: #D6D3D1; font-size: 0.85rem; }
+  .btn-undo {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-undo:hover { background: #163152; }
+  .undo-countdown {
+    font-size: 0.78rem;
+    color: #A8A29E;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+  }
+  .undo-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    transition: width 1s linear;
+    width: 100%;
+  }
+
+  /* ── RESULT SECTIONS ── */
+  .result-section { margin-bottom: 2.5rem; }
+  .result-section-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    padding: 0.5rem 0 0.5rem 1rem;
+    border-left: 3px solid var(--accent);
+  }
+  .bar-count {
+    flex: 0 0 90px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+  .bar-total {
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: right;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 640px) {
+    .bar-count { display: none; }
+    .undo-toast { width: calc(100% - 2rem); white-space: normal; flex-wrap: wrap; }
+  }
 </style>
 
 </head>
@@ -1291,7 +1393,11 @@
 <div id="page-admin" class="page">
   <header class="admin-header">
     <div class="logo">Painel Administrativo — Escuta Organizacional</div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-reset" onclick="resetPesquisa()">
+        <svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1-3M3 2v3h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Reiniciar Pesquisa
+      </button>
       <button class="btn-export" onclick="exportWord()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12"/></svg>
         Exportar Word
@@ -1325,6 +1431,26 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- MODAL DE CONFIRMÇÃO -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:998;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:2rem;max-width:420px;width:90%;box-shadow:var(--shadow-md)">
+    <h3 id="confirmTitle" style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-primary);margin-bottom:0.75rem"></h3>
+    <p id="confirmMsg" style="font-size:0.875rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem"></p>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+      <button onclick="closeConfirmModal()" style="background:transparent;border:1px solid var(--border-strong);color:var(--text-secondary);padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:0.875rem;cursor:pointer">Cancelar</button>
+      <button id="confirmOkBtn" style="background:var(--error);color:white;border:none;padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:0.875rem;font-weight:500;cursor:pointer">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO TOAST -->
+<div class="undo-toast" id="undoToast">
+  <span class="undo-toast-text">✅ Pesquisa reiniciada.</span>
+  <button class="btn-undo" id="undoBtn" onclick="undoReset()">Desfazer</button>
+  <span class="undo-countdown" id="undoCountdown">3:00</span>
+  <div class="undo-bar" id="undoBar"></div>
 </div>
 
 <script>
@@ -1411,122 +1537,90 @@ document.addEventListener('dragstart', function(e) { e.preventDefault(); });
 })();
 
 // ╔══════════════════════════════════════════════════════════╗
-// ║         CRIPTOGRAFIA — AES-GCM 256-bit (Web Crypto)     ║
+// ║   SHA-256 — utilitário para autenticação admin          ║
 // ╚══════════════════════════════════════════════════════════╝
-const CRYPTO = (() => {
-  const _enc = new TextEncoder();
-  const _dec = new TextDecoder();
-  // Passphrase e salt fixos — chave derivada via PBKDF2
-  const PASS = 'eo-rh-zim-2026-seg-v1';
-  const SALT = _enc.encode('escuta-org-nacl-v1');
-  let _chaveCache = null;
-
-  async function _obterChave() {
-    if (_chaveCache) return _chaveCache;
-    const bruta = await crypto.subtle.importKey(
-      'raw', _enc.encode(PASS), 'PBKDF2', false, ['deriveKey']
-    );
-    _chaveCache = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: SALT, iterations: 150000, hash: 'SHA-256' },
-      bruta,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt']
-    );
-    return _chaveCache;
-  }
-
-  async function cifrar(texto) {
-    const chave = await _obterChave();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chave, _enc.encode(texto));
-    const buf = new Uint8Array(12 + ct.byteLength);
-    buf.set(iv, 0);
-    buf.set(new Uint8Array(ct), 12);
-    // btoa seguro para qualquer byte
-    return btoa(Array.from(buf, b => String.fromCharCode(b)).join(''));
-  }
-
-  async function decifrar(b64) {
-    try {
-      const buf = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-      const iv   = buf.slice(0, 12);
-      const ct   = buf.slice(12);
-      const chave = await _obterChave();
-      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, chave, ct);
-      return _dec.decode(pt);
-    } catch { return null; }
-  }
-
-  async function sha256(texto) {
-    const hash = await crypto.subtle.digest('SHA-256', _enc.encode(texto));
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
-
-  return { cifrar, decifrar, sha256 };
-})();
+async function _sha256(texto) {
+  const enc = new TextEncoder();
+  const hash = await crypto.subtle.digest('SHA-256', enc.encode(texto));
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 // ╔══════════════════════════════════════════════════════════╗
-// ║          DB — localStorage cifrado com AES-GCM          ║
+// ║   SUPABASE — Backend centralizado (cross-device)        ║
 // ╚══════════════════════════════════════════════════════════╝
-const DB_KEY   = 'eo_v2_data';
-const DB_VAZIO = () => ({ metrics: { accesses:0, started:0, completed:0 }, responses:[] });
+const SUPABASE_URL = 'https://vaauxknqxyugdoqqjxgi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhYXV4a25xeHl1Z2RvcXFqeGdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5Mzc2MjQsImV4cCI6MjA5MzUxMzYyNH0.LgKuhIjqGIC_fOADnUAocUmI9O65RMPA9CBvEGQHN9E';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function _rowToResp(row) {
+  const r = { ts: row.created_at };
+  for (let i = 1; i <= 20; i++) r[`q${i}`] = row[`q${i}`];
+  return r;
+}
+
 const DB = {
   async load() {
     try {
-      const raw = localStorage.getItem(DB_KEY);
-      if (!raw) return DB_VAZIO();
-      const plain = await CRYPTO.decifrar(raw);
-      if (!plain) return DB_VAZIO();
-      return JSON.parse(plain);
-    } catch { return DB_VAZIO(); }
-  },
-  async save(d) {
-    const enc = await CRYPTO.cifrar(JSON.stringify(d));
-    localStorage.setItem(DB_KEY, enc);
+      const [{ data: m }, { data: r }] = await Promise.all([
+        _sb.from('eo_metricas').select('*').eq('id', 1).single(),
+        _sb.from('eo_respostas').select('*').order('created_at', { ascending: true })
+      ]);
+      return {
+        metrics: {
+          accesses:  m?.acessos   || 0,
+          started:   m?.iniciados  || 0,
+          completed: m?.concluidos || 0
+        },
+        responses: (r || []).map(_rowToResp)
+      };
+    } catch { return { metrics: { accesses:0, started:0, completed:0 }, responses:[] }; }
   },
   async trackEvent(ev) {
-    const d = await this.load();
-    if (ev === 'access')    d.metrics.accesses++;
-    if (ev === 'started')   d.metrics.started++;
-    if (ev === 'completed') d.metrics.completed++;
-    await this.save(d);
+    try {
+      const col = ev==='access' ? 'acessos' : ev==='started' ? 'iniciados' : 'concluidos';
+      await _sb.rpc('incrementar_metrica', { coluna: col });
+    } catch(e) { console.warn('trackEvent:', e); }
   },
   async saveResponse(resp) {
-    const d = await this.load();
-    d.responses.push({ ts: new Date().toISOString(), ...resp });
-    await this.save(d);
+    const row = {};
+    for (let i = 1; i <= 20; i++) row[`q${i}`] = resp[`q${i}`] ?? null;
+    await _sb.from('eo_respostas').insert([row]);
+  },
+  async clearAll() {
+    await Promise.all([
+      _sb.from('eo_respostas').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      _sb.from('eo_metricas').update({ acessos:0, iniciados:0, concluidos:0 }).eq('id', 1)
+    ]);
+  },
+  async restoreBackup(backup) {
+    await _sb.from('eo_metricas').update({
+      acessos:   backup.metrics.accesses,
+      iniciados:  backup.metrics.started,
+      concluidos: backup.metrics.completed
+    }).eq('id', 1);
+    if (backup.responses.length > 0) {
+      const rows = backup.responses.map(r => {
+        const row = { created_at: r.ts };
+        for (let i = 1; i <= 20; i++) row[`q${i}`] = r[`q${i}`] ?? null;
+        return row;
+      });
+      await _sb.from('eo_respostas').insert(rows);
+    }
   }
 };
-// Migra dados antigos (texto claro) para o formato cifrado, se existirem
-(async function migrarDadosAntigos() {
-  const CHAVE_ANTIGA = 'escuta-organizacional-data';
-  const antigo = localStorage.getItem(CHAVE_ANTIGA);
-  if (antigo && !localStorage.getItem(DB_KEY)) {
-    try {
-      const parsed = JSON.parse(antigo);
-      await DB.save(parsed);
-      localStorage.removeItem(CHAVE_ANTIGA);
-    } catch { localStorage.removeItem(CHAVE_ANTIGA); }
-  }
-})();
 DB.trackEvent('access');
 
 // ╔══════════════════════════════════════════════════════════╗
 // ║          ADMIN — Credenciais com hash SHA-256            ║
 // ╚══════════════════════════════════════════════════════════╝
-// Os hashes são calculados uma vez e cacheados (nunca armazena a senha em texto claro)
 let _adminHash = null;
 async function _getAdminHash() {
   if (_adminHash) return _adminHash;
-  const [u, p] = await Promise.all([
-    CRYPTO.sha256('RHZIM'),
-    CRYPTO.sha256('TURMA2026')
-  ]);
+  const [u, p] = await Promise.all([_sha256('RHZIM'), _sha256('TURMA2026')]);
   _adminHash = { user: u, pass: p };
   return _adminHash;
 }
-_getAdminHash(); // pré-aquece no carregamento
+_getAdminHash();
 
 // ═══════════════════════════════
 // NAVIGATION
@@ -1645,13 +1739,12 @@ async function adminLogin() {
   }
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
   try {
-    const [uhash, phash] = await Promise.all([CRYPTO.sha256(user), CRYPTO.sha256(pass)]);
+    const [uhash, phash] = await Promise.all([_sha256(user), _sha256(pass)]);
     const creds = await _getAdminHash();
     if (uhash === creds.user && phash === creds.pass) {
       showPage('page-admin');
       await renderDashboard();
     } else {
-      // Pequeno delay para dificultar brute-force
       await new Promise(r => setTimeout(r, 800));
       err.textContent = 'Usuário ou senha inválidos.';
       err.classList.add('visible');
@@ -1670,28 +1763,146 @@ function adminLogout() {
 }
 
 // ═══════════════════════════════
+// RESET / UNDO
+// ═══════════════════════════════
+let _backupData = null;
+let _undoTimer  = null;
+let _undoSecs   = 180;
+
+function showConfirmModal(title, msg, onOk) {
+  const modal = document.getElementById('confirmModal');
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent   = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.onclick = () => { closeConfirmModal(); onOk(); };
+  modal.style.display = 'flex';
+}
+function closeConfirmModal() {
+  document.getElementById('confirmModal').style.display = 'none';
+}
+
+async function resetPesquisa() {
+  showConfirmModal(
+    'Reiniciar pesquisa',
+    'Isso apagará TODAS as respostas e métricas. Você terá 3 minutos para desfazer. Confirma?',
+    async () => {
+      _backupData = await DB.load();
+      try {
+        await DB.clearAll();
+        await renderDashboard();
+        _startUndo();
+      } catch {
+        alert('Erro ao reiniciar. Tente novamente.');
+        _backupData = null;
+      }
+    }
+  );
+}
+
+function _startUndo() {
+  _undoSecs = 180;
+  const toast = document.getElementById('undoToast');
+  const bar   = document.getElementById('undoBar');
+  toast.classList.add('visible');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  // force reflow then animate
+  bar.getBoundingClientRect();
+  bar.style.transition = `width ${_undoSecs}s linear`;
+  bar.style.width = '0%';
+  _updateUndoLabel();
+  if (_undoTimer) clearInterval(_undoTimer);
+  _undoTimer = setInterval(() => {
+    _undoSecs--;
+    _updateUndoLabel();
+    if (_undoSecs <= 0) { _hideUndo(); _backupData = null; }
+  }, 1000);
+}
+function _updateUndoLabel() {
+  const m = Math.floor(_undoSecs / 60);
+  const s = _undoSecs % 60;
+  document.getElementById('undoCountdown').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+function _hideUndo() {
+  clearInterval(_undoTimer);
+  document.getElementById('undoToast').classList.remove('visible');
+}
+async function undoReset() {
+  if (!_backupData) return;
+  const btn = document.getElementById('undoBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Restaurando...'; }
+  try {
+    await DB.clearAll();
+    await DB.restoreBackup(_backupData);
+    _backupData = null;
+    _hideUndo();
+    await renderDashboard();
+  } catch {
+    alert('Erro ao restaurar. Tente novamente.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Desfazer'; }
+  }
+}
+
+// ═══════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════
-const QUESTIONS = [
-  { id: 'q1',  label: 'Como você avalia o ambiente de trabalho?' },
-  { id: 'q2',  label: 'Você se sente respeitado(a) no trabalho?' },
-  { id: 'q3',  label: 'Existe abertura para diálogo com a liderança?' },
-  { id: 'q4',  label: 'O ambiente favorece o trabalho em equipe?' },
-  { id: 'q5',  label: 'Recebeu treinamento ao iniciar?' },
-  { id: 'q6',  label: 'A empresa oferece treinamentos atualmente?' },
-  { id: 'q7',  label: 'Você se sente preparado(a) para o cargo?' },
-  { id: 'q8',  label: 'Cobranças alinhadas com o preparo oferecido?' },
-  { id: 'q9',  label: 'Como avalia seu bem-estar no trabalho?' },
-  { id: 'q10', label: 'Você já se sentiu sobrecarregado(a)?' },
-  { id: 'q11', label: 'Empresa demonstra preocupação com bem-estar?' },
-  { id: 'q12', label: 'Consegue manter equilíbrio trabalho/vida pessoal?' },
-  { id: 'q13', label: 'Você se sente bem informado(a) sobre a empresa?' },
-  { id: 'q14', label: 'Informações são comunicadas com clareza?' },
-  { id: 'q15', label: 'Você se sente valorizado(a) pelo trabalho?' },
-  { id: 'q16', label: 'A empresa realiza ações internas?' },
-  { id: 'q17', label: 'Você enxerga oportunidades de crescimento?' },
-  { id: 'q18', label: 'Tem clareza sobre funções e responsabilidades?' },
+const SECTIONS = [
+  { title: '1. Ambiente Organizacional', questions: [
+    { id:'q1',  label:'Como você avalia o ambiente de trabalho na empresa?' },
+    { id:'q2',  label:'Você se sente respeitado(a) no seu ambiente de trabalho?' },
+    { id:'q3',  label:'Existe abertura para diálogo com sua liderança?' },
+    { id:'q4',  label:'O ambiente favorece o trabalho em equipe?' },
+  ]},
+  { title: '2. Treinamento e Desenvolvimento', questions: [
+    { id:'q5',  label:'Você recebeu treinamento ao iniciar na empresa?' },
+    { id:'q6',  label:'A empresa oferece treinamentos ou orientações atualmente?' },
+    { id:'q7',  label:'Você se sente preparado(a) para as demandas do cargo?' },
+    { id:'q8',  label:'As cobranças estão alinhadas com o preparo oferecido?' },
+  ]},
+  { title: '3. Bem-estar no Trabalho', questions: [
+    { id:'q9',  label:'Como você avalia seu bem-estar no trabalho?' },
+    { id:'q10', label:'Você já se sentiu sobrecarregado(a) no trabalho?' },
+    { id:'q11', label:'A empresa demonstra preocupação com o bem-estar?' },
+    { id:'q12', label:'Você consegue manter equilíbrio trabalho/vida pessoal?' },
+  ]},
+  { title: '4. Comunicação Interna e Valorização', questions: [
+    { id:'q13', label:'Você se sente bem informado(a) sobre a empresa?' },
+    { id:'q14', label:'As informações são comunicadas com clareza?' },
+    { id:'q15', label:'Você se sente valorizado(a) pelo trabalho?' },
+    { id:'q16', label:'A empresa realiza ações internas (eventos, reconhecimento)?' },
+  ]},
+  { title: '5. Crescimento e Percepção', questions: [
+    { id:'q17', label:'Você enxerga oportunidades de crescimento?' },
+    { id:'q18', label:'Você tem clareza sobre suas funções e responsabilidades?' },
+  ]},
 ];
+
+function _buildQuestionCard(q, responses) {
+  const counts = {};
+  responses.forEach(r => { const v = r[q.id]; if (v != null) counts[v] = (counts[v]||0)+1; });
+  const total  = Object.values(counts).reduce((a,b)=>a+b,0);
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  let body;
+  if (total === 0) {
+    body = '<p style="font-size:0.8rem;color:var(--text-muted)">Nenhuma resposta ainda.</p>';
+  } else {
+    body = sorted.map(([label,count]) => {
+      const pct = Math.round((count/total)*100);
+      return `<div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%">${pct>18?`<span>${count}</span>`:''}</div></div>
+        <div class="bar-count">${count} pessoa${count!==1?'s':''}</div>
+        <div class="bar-pct">${pct}%</div>
+      </div>`;
+    }).join('');
+    body += `<div class="bar-total">${total} resposta${total!==1?'s':''} no total</div>`;
+  }
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  card.innerHTML = `<div class="chart-card-title">${q.label}</div>${body}`;
+  return card;
+}
 
 async function renderDashboard() {
   const data = await DB.load();
@@ -1705,31 +1916,26 @@ async function renderDashboard() {
     <div class="metric-card"><div class="metric-label">Formulários concluídos</div><div class="metric-value">${metrics.completed}</div><div class="metric-sub">Enviaram respostas</div></div>
     <div class="metric-card accent-card"><div class="metric-label">Taxa de conclusão</div><div class="metric-value">${completionRate}%</div><div class="metric-sub">${n} resposta${n!==1?'s':''} registrada${n!==1?'s':''}</div></div>`;
 
-  const grid = document.createElement('div');
-  grid.className = 'admin-grid'; grid.style.marginBottom = '2.5rem';
-  QUESTIONS.forEach(q => {
-    const counts = {};
-    responses.forEach(r => { const v = r[q.id]; if (v !== undefined) counts[v] = (counts[v]||0)+1; });
-    const total = Object.values(counts).reduce((a,b)=>a+b,0);
-    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-    let barsHTML = total===0
-      ? '<p style="font-size:0.8rem;color:var(--text-muted)">Nenhuma resposta ainda.</p>'
-      : sorted.map(([label,count])=>{
-          const pct=Math.round((count/total)*100);
-          return `<div class="bar-row"><div class="bar-label">${label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%">${pct>15?`<span>${count}</span>`:''}</div></div><div class="bar-pct">${pct}%</div></div>`;
-        }).join('');
-    const card = document.createElement('div'); card.className='chart-card';
-    card.innerHTML = `<div class="chart-card-title">${q.label.length>55?q.label.substring(0,55)+'…':q.label}</div>${barsHTML}`;
-    grid.appendChild(card);
+  const container = document.getElementById('chartsContainer');
+  container.innerHTML = '';
+  SECTIONS.forEach(sec => {
+    const secEl = document.createElement('div');
+    secEl.className = 'result-section';
+    secEl.innerHTML = `<h3 class="result-section-title">${sec.title}</h3>`;
+    const grid = document.createElement('div');
+    grid.className = 'admin-grid';
+    sec.questions.forEach(q => grid.appendChild(_buildQuestionCard(q, responses)));
+    secEl.appendChild(grid);
+    container.appendChild(secEl);
   });
-  document.getElementById('chartsContainer').innerHTML='';
-  document.getElementById('chartsContainer').appendChild(grid);
 
+  // Respostas abertas
   const openAnswers = responses.map(r=>r.q19).filter(a=>a&&a.trim());
   document.getElementById('openAnswersList').innerHTML = openAnswers.length===0
     ? '<div class="empty-state">Nenhuma resposta aberta registrada ainda.</div>'
-    : openAnswers.map(a=>`<div class="answer-item">${escapeHTML(a)}</div>`).join('');
+    : openAnswers.map((a,i)=>`<div class="answer-item"><span style="font-size:0.75rem;color:var(--text-muted);margin-right:8px">#${i+1}</span>${escapeHTML(a)}</div>`).join('');
 
+  // Escala
   const scaleCounts = new Array(11).fill(0);
   responses.forEach(r => { if (r.q20!=null) scaleCounts[Number(r.q20)]++; });
   const maxCount = Math.max(...scaleCounts,1);
@@ -1747,6 +1953,7 @@ function escapeHTML(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+
 // ═══════════════════════════════
 // EXPORTAR WORD
 // ═══════════════════════════════
@@ -1757,14 +1964,14 @@ async function exportWord() {
   const date = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
   const completionRate = metrics.started > 0 ? Math.round((metrics.completed / metrics.started) * 100) : 0;
 
-  // Calcula dados para o relatório
-  const qStats = QUESTIONS.map(q => {
+  // Calcula stats de cada questão usando SECTIONS
+  function calcStats(qid) {
     const counts = {};
-    responses.forEach(r => { const v = r[q.id]; if (v !== undefined) counts[v] = (counts[v]||0)+1; });
-    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    responses.forEach(r => { const v = r[qid]; if (v != null) counts[v] = (counts[v]||0)+1; });
+    const total  = Object.values(counts).reduce((a,b)=>a+b,0);
     const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-    return { ...q, counts, total, sorted };
-  });
+    return { counts, total, sorted };
+  }
 
   const openAnswers = responses.map(r=>r.q19).filter(a=>a&&a.trim());
 
@@ -1774,51 +1981,39 @@ async function exportWord() {
   let weightedSum=0; scaleCounts.forEach((c,i)=>weightedSum+=c*i);
   const avg = scaleTotal>0?(weightedSum/scaleTotal).toFixed(1):'—';
 
-  // Seções por tema
-  const sections = [
-    { title: '1. Ambiente e Clima Organizacional', ids: ['q1','q2','q3','q4'] },
-    { title: '2. Treinamento e Capacitação',       ids: ['q5','q6','q7','q8'] },
-    { title: '3. Bem-Estar e Saúde no Trabalho',   ids: ['q9','q10','q11','q12'] },
-    { title: '4. Comunicação Interna',              ids: ['q13','q14'] },
-    { title: '5. Reconhecimento e Crescimento',     ids: ['q15','q16','q17','q18'] },
-  ];
-
-  // ── Gera linhas da tabela de resultados por pergunta ──
-  // Usa células coloridas proporcionais ao percentual (sem Unicode bars)
+  // ── Gera HTML das seções por pergunta usando SECTIONS ──
   let sectionsHTML = '';
-  sections.forEach(sec => {
+  SECTIONS.forEach(sec => {
     let questionsHTML = '';
-    sec.ids.forEach(qid => {
-      const q = qStats.find(x => x.id === qid);
-      if (!q) return;
+    sec.questions.forEach(q => {
+      const { total, sorted } = calcStats(q.id);
       let rows = '';
-      if (q.total === 0) {
+      if (total === 0) {
         rows = `<tr><td colspan="4" style="padding:8px 10px;font-style:italic;color:#888;font-size:11pt;border:1px solid #dde3ea">Sem respostas</td></tr>`;
       } else {
-        // Cabeçalho da tabela de opções
         rows += `<tr style="background:#1e3a5f">
-          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:44%">Opção de resposta</th>
-          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:center;border:1px solid #163152;width:12%">Qtd.</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:40%">Opção de resposta</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:center;border:1px solid #163152;width:14%">Pessoas</th>
           <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:center;border:1px solid #163152;width:10%">%</th>
-          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:34%">Proporção visual</th>
+          <th style="padding:6px 10px;font-size:10pt;color:#ffffff;text-align:left;border:1px solid #163152;width:36%">Proporção visual</th>
         </tr>`;
-        q.sorted.forEach(([label, count], idx) => {
-          const pct = Math.round((count/q.total)*100);
+        sorted.forEach(([label, count], idx) => {
+          const pct = Math.round((count/total)*100);
           const rowBg = idx % 2 === 0 ? '#f7f9fc' : '#ffffff';
-          // Barra visual usando tabela aninhada — compatível com Word
-          const barFilled = Math.round(pct / 5); // 0–20 células preenchidas
+          const barFilled = Math.round(pct / 5);
           const barEmpty  = 20 - barFilled;
-          const barCells  = (barFilled > 0 ? `<td style="background:#1e3a5f;width:${barFilled * 5}%;height:14px;font-size:1px">&nbsp;</td>` : '')
-                          + (barEmpty  > 0 ? `<td style="background:#dde3ea;width:${barEmpty  * 5}%;height:14px;font-size:1px">&nbsp;</td>` : '');
+          const barCells  = (barFilled > 0 ? `<td style="background:#1e3a5f;width:${barFilled*5}%;height:14px;font-size:1px">&nbsp;</td>` : '')
+                          + (barEmpty  > 0 ? `<td style="background:#dde3ea;width:${barEmpty*5}%;height:14px;font-size:1px">&nbsp;</td>` : '');
           rows += `<tr style="background:${rowBg}">
-            <td style="padding:8px 10px;font-size:11pt;color:#222222;border:1px solid #dde3ea;vertical-align:middle">${label}</td>
-            <td style="padding:8px 10px;font-size:11pt;color:#1e3a5f;font-weight:bold;text-align:center;border:1px solid #dde3ea;vertical-align:middle">${count}</td>
-            <td style="padding:8px 10px;font-size:11pt;color:#1e3a5f;font-weight:bold;text-align:center;border:1px solid #dde3ea;vertical-align:middle">${pct}%</td>
-            <td style="padding:6px 10px;border:1px solid #dde3ea;vertical-align:middle">
+            <td style="padding:8px 10px;font-size:11pt;color:#222;border:1px solid #dde3ea">${label}</td>
+            <td style="padding:8px 10px;font-size:11pt;font-weight:bold;color:#1e3a5f;text-align:center;border:1px solid #dde3ea">${count} pessoa${count!==1?'s':''}</td>
+            <td style="padding:8px 10px;font-size:11pt;font-weight:bold;color:#1e3a5f;text-align:center;border:1px solid #dde3ea">${pct}%</td>
+            <td style="padding:6px 10px;border:1px solid #dde3ea">
               <table style="width:100%;border-collapse:collapse;height:14px"><tr>${barCells}</tr></table>
             </td>
           </tr>`;
         });
+        rows += `<tr style="background:#f0f4f8"><td colspan="4" style="padding:6px 10px;font-size:10pt;color:#555;border:1px solid #dde3ea;text-align:right"><b>Total: ${total} resposta${total!==1?'s':''}</b></td></tr>`;
       }
       questionsHTML += `
         <p style="margin:12px 0 4px 0;font-weight:bold;color:#1e3a5f;font-size:11pt">${q.label}</p>
@@ -1826,13 +2021,16 @@ async function exportWord() {
           <tbody>${rows}</tbody>
         </table>`;
     });
-
     sectionsHTML += `
       <h2 style="font-size:13pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4px;margin:20px 0 12px 0">${sec.title}</h2>
       ${questionsHTML}`;
   });
 
   // ── Respostas abertas ──
+
+
+  // ── Respostas abertas ──
+
   let openHTML = '';
   if (openAnswers.length === 0) {
     openHTML = '<p style="color:#888;font-style:italic;font-size:11pt">Nenhuma resposta registrada.</p>';

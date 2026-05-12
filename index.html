@@ -952,6 +952,90 @@
     width: 100%;
   }
 
+  /* ── RESUMO IA ── */
+  .resumo-ia-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 2.5rem;
+  }
+  .resumo-ia-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .resumo-ia-header .badge-ia {
+    background: var(--accent);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .resumo-ia-header .titulo {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .resumo-ia-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .insight-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    border: 1px solid transparent;
+  }
+  .insight-card.positivo  { background: #ECFDF5; border-color: #A7F3D0; color: #1A5E3A; }
+  .insight-card.atencao   { background: #FFFBEB; border-color: #FCD34D; color: #92400E; }
+  .insight-card.critico   { background: #FEF2F2; border-color: #FCA5A5; color: #991B1B; }
+  .insight-card.neutro    { background: var(--bg); border-color: var(--border); color: var(--text-secondary); }
+  .insight-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .insight-text { flex: 1; }
+  .resumo-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+  }
+  .resumo-loading .dot-pulse {
+    display: flex;
+    gap: 4px;
+  }
+  .resumo-loading .dot-pulse span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse-dot 1.2s infinite ease-in-out;
+  }
+  .resumo-loading .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .resumo-loading .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse-dot {
+    0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+  @media (max-width: 640px) {
+    .resumo-ia-wrap { padding: 1.1rem; border-radius: 12px; }
+    .insight-card { font-size: 0.84rem; padding: 0.75rem; }
+  }
+
   /* ── RESULT SECTIONS ── */
   .result-section { margin-bottom: 2.5rem; }
   .result-section-title {
@@ -1409,6 +1493,21 @@
     <!-- Metrics -->
     <h2 class="admin-section-title">Visão Geral</h2>
     <div class="metrics-grid" id="metricsGrid"></div>
+
+    <!-- AI Summary -->
+    <h2 class="admin-section-title">Resumo Inteligente</h2>
+    <div class="resumo-ia-wrap">
+      <div class="resumo-ia-header">
+        <span class="badge-ia">IA</span>
+        <span class="titulo">Análise automática dos resultados</span>
+      </div>
+      <div class="resumo-ia-grid" id="resumoIAGrid">
+        <div class="resumo-loading">
+          <div class="dot-pulse"><span></span><span></span><span></span></div>
+          Aguardando dados do formulário...
+        </div>
+      </div>
+    </div>
 
     <!-- Per-question charts -->
     <h2 class="admin-section-title">Resultados por Pergunta</h2>
@@ -1947,6 +2046,100 @@ async function renderDashboard() {
     return `<div class="scale-bar-wrap"><div style="flex:1;display:flex;align-items:flex-end;width:100%"><div class="scale-bar-fill" style="height:${h}%;min-height:${c>0?4:0}px"></div></div><div class="scale-bar-num">${i}</div></div>`;
   }).join('');
   document.getElementById('scaleAvg').textContent = avg;
+
+  // Dispara resumo IA em paralelo (não bloqueia o render dos gráficos)
+  gerarResumoIA(responses, metrics);
+}
+
+// ═══════════════════════════════
+// RESUMO INTELIGENTE (IA)
+// ═══════════════════════════════
+async function gerarResumoIA(responses, metrics) {
+  const grid = document.getElementById('resumoIAGrid');
+  const n = responses.length;
+
+  if (n === 0) {
+    grid.innerHTML = `<div class="insight-card neutro"><span class="insight-icon">📋</span><span class="insight-text">Nenhuma resposta registrada ainda. O resumo será gerado assim que houver dados.</span></div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="resumo-loading"><div class="dot-pulse"><span></span><span></span><span></span></div>Analisando ${n} resposta${n!==1?'s':''}...</div>`;
+
+  // Monta estatísticas por pergunta
+  function pct(qid, valores) {
+    const total = responses.filter(r => r[qid] != null).length;
+    if (total === 0) return {};
+    const res = {};
+    valores.forEach(v => {
+      const c = responses.filter(r => r[qid] === v).length;
+      res[v] = Math.round((c / total) * 100);
+    });
+    return res;
+  }
+
+  const stats = {
+    q1_ambiente:      pct('q1', ['Muito bom','Bom','Regular','Ruim','Muito ruim']),
+    q2_respeito:      pct('q2', ['Sempre','Na maioria das vezes','Às vezes','Raramente','Nunca']),
+    q3_dialogo:       pct('q3', ['Sempre','Frequentemente','Às vezes','Raramente','Nunca']),
+    q4_equipe:        pct('q4', ['Sim','Parcialmente','Não']),
+    q5_treinamento:   pct('q5', ['Sim','Não']),
+    q6_trein_atual:   pct('q6', ['Sim, frequentemente','Ocasionalmente','Raramente','Nunca']),
+    q7_preparo:       pct('q7', ['Totalmente preparado(a)','Parcialmente preparado(a)','Pouco preparado(a)','Não me sinto preparado(a)']),
+    q8_alinhamento:   pct('q8', ['Sim','Parcialmente','Não']),
+    q9_bemestar:      pct('q9', ['Muito bom','Bom','Regular','Ruim','Muito ruim']),
+    q10_sobrecarga:   pct('q10', ['Frequentemente','Às vezes','Raramente','Nunca']),
+    q11_preocupacao:  pct('q11', ['Sim','Parcialmente','Não']),
+    q12_equilibrio:   pct('q12', ['Sim','Parcialmente','Não']),
+    q13_informado:    pct('q13', ['Sim','Parcialmente','Não']),
+    q14_clareza:      pct('q14', ['Sempre','Frequentemente','Às vezes','Raramente','Nunca']),
+    q15_valorizado:   pct('q15', ['Sim','Parcialmente','Não']),
+    q16_acoes:        pct('q16', ['Sim','Às vezes','Não']),
+    q17_crescimento:  pct('q17', ['Sim','Parcialmente','Não']),
+    q18_clareza_fn:   pct('q18', ['Sim','Parcialmente','Não']),
+    total_respostas:  n,
+    taxa_conclusao:   metrics.started > 0 ? Math.round((metrics.completed / metrics.started) * 100) : 0
+  };
+
+  const prompt = `Você é um especialista em Recursos Humanos e clima organizacional. Analise os dados abaixo de um formulário de Escuta Organizacional respondido por ${n} colaborador${n!==1?'es':''} e gere de 4 a 6 insights concisos e diretos.
+
+DADOS (percentuais por resposta):
+${JSON.stringify(stats, null, 2)}
+
+REGRAS OBRIGATÓRIAS:
+- Responda SOMENTE com um array JSON válido, sem markdown, sem texto extra
+- Cada item deve ter: "tipo" (positivo | atencao | critico | neutro), "icone" (emoji), "texto" (frase em português BR, máx 120 caracteres, direta e com % quando relevante)
+- Use "critico" para problemas graves (>40% negativo), "atencao" para moderados (20-40%), "positivo" para pontos fortes (>60% positivo), "neutro" para observações gerais
+- Comece cada frase com: "Ponto positivo:", "Atenção:", "Ponto crítico:", ou "Observação:" conforme o tipo
+- Seja específico, use os números reais dos dados
+
+Exemplo de formato:
+[{"tipo":"critico","icone":"🚨","texto":"Ponto crítico: 58% dos colaboradores relataram sobrecarga frequente no trabalho."},{"tipo":"positivo","icone":"✅","texto":"Ponto positivo: 72% se sentem respeitados no ambiente de trabalho."}]`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.find(b => b.type === 'text')?.text || '[]';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const insights = JSON.parse(clean);
+
+    if (!Array.isArray(insights) || insights.length === 0) throw new Error('empty');
+
+    grid.innerHTML = insights.map(ins => `
+      <div class="insight-card ${ins.tipo}">
+        <span class="insight-icon">${ins.icone}</span>
+        <span class="insight-text">${escapeHTML(ins.texto)}</span>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML = `<div class="insight-card neutro"><span class="insight-icon">⚠️</span><span class="insight-text">Não foi possível gerar o resumo automático. Verifique a conexão e tente recarregar o painel.</span></div>`;
+  }
 }
 
 function escapeHTML(str) {

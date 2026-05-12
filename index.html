@@ -993,18 +993,38 @@
     gap: 12px;
     padding: 0.875rem 1rem;
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
-    line-height: 1.55;
     border: 1px solid transparent;
   }
-  .insight-card.positivo { background:#ECFDF5; border-color:#A7F3D0; color:#1A5E3A; }
-  .insight-card.atencao  { background:#FFFBEB; border-color:#FCD34D; color:#92400E; }
-  .insight-card.critico  { background:#FEF2F2; border-color:#FCA5A5; color:#991B1B; }
-  .insight-card.neutro   { background:var(--bg); border-color:var(--border); color:var(--text-secondary); }
-  .insight-icon { font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+  .insight-card.positivo { background:#ECFDF5; border-color:#A7F3D0; }
+  .insight-card.atencao  { background:#FFFBEB; border-color:#FCD34D; }
+  .insight-card.critico  { background:#FEF2F2; border-color:#FCA5A5; }
+  .insight-card.neutro   { background:var(--bg); border-color:var(--border); }
+  .insight-icon { font-size:1.1rem; flex-shrink:0; margin-top:2px; }
+  .insight-body { display:flex; flex-direction:column; gap:4px; flex:1; }
+  .insight-texto {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .insight-card.positivo .insight-texto { color:#1A5E3A; }
+  .insight-card.atencao  .insight-texto { color:#92400E; }
+  .insight-card.critico  .insight-texto { color:#991B1B; }
+  .insight-card.neutro   .insight-texto { color:var(--text-secondary); }
+  .insight-acao {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    opacity: 0.85;
+  }
+  .insight-card.positivo .insight-acao { color:#1A5E3A; }
+  .insight-card.atencao  .insight-acao { color:#92400E; }
+  .insight-card.critico  .insight-acao { color:#991B1B; }
+  .insight-card.neutro   .insight-acao { color:var(--text-muted); }
+  .insight-acao strong { font-weight:600; }
   @media (max-width:640px) {
     .resumo-ia-wrap { padding:1.1rem; border-radius:12px; }
     .insight-card { font-size:0.84rem; padding:0.75rem; }
+    .insight-texto { font-size:0.84rem; }
+    .insight-acao { font-size:0.78rem; }
   }
 
   /* ── RESULT SECTIONS ── */
@@ -1473,7 +1493,10 @@
         <span class="titulo">Análise automática dos resultados</span>
       </div>
       <div class="resumo-ia-grid" id="resumoIAGrid">
-        <div class="insight-card neutro"><span class="insight-icon">⏳</span><span>Aguardando dados...</span></div>
+        <div class="insight-card neutro">
+          <span class="insight-icon">⏳</span>
+          <div class="insight-body"><span class="insight-texto">Aguardando dados...</span></div>
+        </div>
       </div>
     </div>
 
@@ -2015,7 +2038,6 @@ async function renderDashboard() {
   }).join('');
   document.getElementById('scaleAvg').textContent = avg;
 
-  // Gera resumo inteligente com base nos dados
   gerarResumoIA(responses, metrics);
 }
 
@@ -2027,116 +2049,171 @@ function gerarResumoIA(responses, metrics) {
   const n = responses.length;
 
   if (n === 0) {
-    grid.innerHTML = html('neutro','📋','Nenhuma resposta registrada ainda. O resumo aparecerá assim que houver dados.');
+    grid.innerHTML = insightHTML('neutro','📋','Nenhuma resposta registrada ainda.','O resumo aparecerá automaticamente assim que houver dados.');
     return;
   }
 
-  // Calcula % de uma lista de valores "negativos" numa questão
-  function pctNeg(qid, valores) {
-    const total = responses.filter(r => r[qid] != null).length;
-    if (!total) return 0;
-    const neg = responses.filter(r => valores.includes(r[qid])).length;
-    return Math.round((neg / total) * 100);
+  function pctPos(qid, vals) {
+    const tot = responses.filter(r => r[qid] != null).length;
+    if (!tot) return 0;
+    return Math.round(responses.filter(r => vals.includes(r[qid])).length / tot * 100);
   }
-  function pctPos(qid, valores) {
-    const total = responses.filter(r => r[qid] != null).length;
-    if (!total) return 0;
-    const pos = responses.filter(r => valores.includes(r[qid])).length;
-    return Math.round((pos / total) * 100);
-  }
+  function pctNeg(qid, vals) { return pctPos(qid, vals); }
 
   const insights = [];
 
-  // ── Ambiente geral ──
-  const ambientePos = pctPos('q1', ['Bom','Muito bom']);
-  const ambienteNeg = pctNeg('q1', ['Ruim','Muito ruim']);
-  if (ambientePos >= 60)
-    insights.push({ tipo:'positivo', icone:'✅', texto:`Ponto positivo: ${ambientePos}% dos colaboradores avaliam o ambiente de trabalho como bom ou muito bom.` });
-  else if (ambienteNeg >= 30)
-    insights.push({ tipo:'critico', icone:'🚨', texto:`Ponto crítico: ${ambienteNeg}% avaliam o ambiente como ruim ou muito ruim — exige atenção imediata da gestão.` });
+  // ── Ambiente geral (Q1) ──
+  const ambPos = pctPos('q1', ['Bom','Muito bom']);
+  const ambNeg = pctNeg('q1', ['Ruim','Muito ruim']);
+  if (ambNeg >= 40)
+    insights.push({ tipo:'critico', icone:'🚨', peso:0,
+      texto:`Ponto crítico: ${ambNeg}% avaliam o ambiente como ruim ou muito ruim.`,
+      acao:'Investigar causas com as lideranças e aplicar uma escuta direcionada por setor.' });
+  else if (ambPos >= 60)
+    insights.push({ tipo:'positivo', icone:'✅', peso:4,
+      texto:`Ponto positivo: ${ambPos}% avaliam o ambiente de trabalho como bom ou muito bom.`,
+      acao:'Manter as práticas atuais e usá-las como referência para outras áreas.' });
   else
-    insights.push({ tipo:'atencao', icone:'⚠️', texto:`Atenção: apenas ${ambientePos}% consideram o ambiente bom ou muito bom. Há espaço relevante de melhoria.` });
+    insights.push({ tipo:'atencao', icone:'⚠️', peso:2,
+      texto:`Atenção: apenas ${ambPos}% consideram o ambiente bom ou muito bom.`,
+      acao:'Identificar os setores com menor satisfação e abrir canais de diálogo com as equipes.' });
 
-  // ── Respeito ──
-  const respeitoPos = pctPos('q2', ['Sempre','Na maioria das vezes']);
-  const respeitoNeg = pctNeg('q2', ['Raramente','Nunca']);
-  if (respeitoPos >= 60)
-    insights.push({ tipo:'positivo', icone:'🤝', texto:`Ponto positivo: ${respeitoPos}% relatam sentir-se respeitados no ambiente de trabalho sempre ou na maioria das vezes.` });
-  else if (respeitoNeg >= 25)
-    insights.push({ tipo:'critico', icone:'🚨', texto:`Ponto crítico: ${respeitoNeg}% raramente ou nunca se sentem respeitados — sinal grave de clima organizacional.` });
+  // ── Respeito (Q2) ──
+  const respPos = pctPos('q2', ['Sempre','Na maioria das vezes']);
+  const respNeg = pctNeg('q2', ['Raramente','Nunca']);
+  if (respNeg >= 25)
+    insights.push({ tipo:'critico', icone:'🚨', peso:0,
+      texto:`Ponto crítico: ${respNeg}% raramente ou nunca se sentem respeitados.`,
+      acao:'Revisar condutas de liderança e implementar política de respeito e ética no trabalho.' });
+  else if (respPos >= 60)
+    insights.push({ tipo:'positivo', icone:'🤝', peso:4,
+      texto:`Ponto positivo: ${respPos}% se sentem respeitados no ambiente de trabalho.`,
+      acao:'Reforçar essa cultura em processos seletivos e na integração de novos colaboradores.' });
 
-  // ── Sobrecarga ──
-  const sobrecarga = pctPos('q10', ['Frequentemente']);
-  const sobrecargaAlta = pctPos('q10', ['Frequentemente','Às vezes']);
-  if (sobrecarga >= 40)
-    insights.push({ tipo:'critico', icone:'🔴', texto:`Ponto crítico: ${sobrecarga}% relatam sobrecarga frequente no trabalho — risco alto de burnout e turnover.` });
-  else if (sobrecargaAlta >= 50)
-    insights.push({ tipo:'atencao', icone:'⚠️', texto:`Atenção: ${sobrecargaAlta}% já se sentiram sobrecarregados, sendo ${sobrecarga}% de forma frequente.` });
+  // ── Sobrecarga (Q10) ──
+  const sobFreq = pctPos('q10', ['Frequentemente']);
+  const sobTotal = pctPos('q10', ['Frequentemente','Às vezes']);
+  if (sobFreq >= 40)
+    insights.push({ tipo:'critico', icone:'🚨', peso:1,
+      texto:`Ponto crítico: ${sobFreq}% relatam sobrecarga frequente no trabalho.`,
+      acao:'Revisar distribuição de tarefas, prazos e rotina de cobranças com gestores.' });
+  else if (sobTotal >= 50)
+    insights.push({ tipo:'atencao', icone:'⚠️', peso:2,
+      texto:`Atenção: ${sobTotal}% já se sentiram sobrecarregados, sendo ${sobFreq}% de forma frequente.`,
+      acao:'Revisar distribuição de tarefas e rotina de cobrança com as lideranças.' });
 
-  // ── Treinamento inicial ──
+  // ── Treinamento inicial (Q5) ──
   const semTrein = pctNeg('q5', ['Não']);
-  if (semTrein >= 40)
-    insights.push({ tipo:'critico', icone:'📚', texto:`Ponto crítico: ${semTrein}% não receberam treinamento ao ingressar na empresa — lacuna séria de integração.` });
+  if (semTrein >= 35)
+    insights.push({ tipo:'critico', icone:'📚', peso:1,
+      texto:`Ponto crítico: ${semTrein}% não receberam treinamento ao ingressar na empresa.`,
+      acao:'Criar ou revisar o processo de integração (onboarding) para novos colaboradores.' });
   else if (semTrein >= 20)
-    insights.push({ tipo:'atencao', icone:'📚', texto:`Atenção: ${semTrein}% dos colaboradores não tiveram treinamento inicial adequado.` });
+    insights.push({ tipo:'atencao', icone:'📚', peso:2,
+      texto:`Treinamento: ${semTrein}% não receberam treinamento inicial adequado.`,
+      acao:'Criar um processo de integração para novos colaboradores.' });
   else
-    insights.push({ tipo:'positivo', icone:'📚', texto:`Ponto positivo: ${100 - semTrein}% dos colaboradores receberam treinamento ao iniciar — bom processo de integração.` });
+    insights.push({ tipo:'positivo', icone:'📚', peso:5,
+      texto:`Treinamento: ${100-semTrein}% receberam treinamento ao ingressar na empresa.`,
+      acao:'Documentar e padronizar o processo de integração para garantir consistência.' });
 
-  // ── Treinamento contínuo ──
-  const semTreinAtual = pctNeg('q6', ['Raramente','Nunca']);
-  if (semTreinAtual >= 50)
-    insights.push({ tipo:'critico', icone:'🎓', texto:`Ponto crítico: ${semTreinAtual}% relatam que a empresa raramente ou nunca oferece treinamentos contínuos.` });
-  else if (semTreinAtual >= 30)
-    insights.push({ tipo:'atencao', icone:'🎓', texto:`Atenção: ${semTreinAtual}% afirmam que os treinamentos contínuos são raros ou inexistentes.` });
+  // ── Treinamento contínuo (Q6) ──
+  const semTreinAt = pctNeg('q6', ['Raramente','Nunca']);
+  if (semTreinAt >= 50)
+    insights.push({ tipo:'critico', icone:'🎓', peso:1,
+      texto:`Ponto crítico: ${semTreinAt}% afirmam que a empresa raramente ou nunca oferece treinamentos.`,
+      acao:'Estruturar um programa de capacitação contínua, mesmo que com recursos internos.' });
+  else if (semTreinAt >= 30)
+    insights.push({ tipo:'atencao', icone:'🎓', peso:2,
+      texto:`Atenção: ${semTreinAt}% relatam que treinamentos contínuos são raros ou inexistentes.`,
+      acao:'Incluir capacitações periódicas no planejamento anual da empresa.' });
 
-  // ── Valorização ──
-  const valorizado = pctPos('q15', ['Sim']);
-  const naoValorizado = pctNeg('q15', ['Não']);
-  if (valorizado >= 60)
-    insights.push({ tipo:'positivo', icone:'🌟', texto:`Ponto positivo: ${valorizado}% dos colaboradores se sentem valorizados pelo seu trabalho.` });
-  else if (naoValorizado >= 35)
-    insights.push({ tipo:'critico', icone:'🌟', texto:`Ponto crítico: ${naoValorizado}% não se sentem valorizados — fator de risco direto para retenção de talentos.` });
+  // ── Preparo para o cargo (Q7) ──
+  const prepNeg = pctNeg('q7', ['Pouco preparado(a)','Não me sinto preparado(a)']);
+  if (prepNeg >= 35)
+    insights.push({ tipo:'critico', icone:'🎯', peso:1,
+      texto:`Ponto crítico: ${prepNeg}% não se sentem preparados para as demandas do cargo.`,
+      acao:'Alinhar expectativas do cargo com treinamentos e suporte técnico adequados.' });
+
+  // ── Valorização (Q15) ──
+  const valorPos = pctPos('q15', ['Sim']);
+  const valorNeg = pctNeg('q15', ['Não']);
+  if (valorNeg >= 35)
+    insights.push({ tipo:'critico', icone:'🌟', peso:0,
+      texto:`Ponto crítico: ${valorNeg}% não se sentem valorizados pelo trabalho que realizam.`,
+      acao:'Implementar programas de reconhecimento e feedback positivo regulares.' });
+  else if (valorPos >= 60)
+    insights.push({ tipo:'positivo', icone:'🌟', peso:4,
+      texto:`Ponto positivo: ${valorPos}% dos colaboradores se sentem valorizados.`,
+      acao:'Manter as práticas de reconhecimento e ampliar para toda a equipe.' });
   else
-    insights.push({ tipo:'atencao', icone:'🌟', texto:`Atenção: apenas ${valorizado}% se sentem valorizados. Reconhecimento é um ponto a desenvolver.` });
+    insights.push({ tipo:'atencao', icone:'⚠️', peso:2,
+      texto:`Atenção: apenas ${valorPos}% se sentem valorizados. Reconhecimento é um ponto crítico.`,
+      acao:'Criar rotinas de feedback positivo e celebração de resultados com as equipes.' });
 
-  // ── Crescimento ──
-  const crescimento = pctPos('q17', ['Sim']);
-  const semCrescimento = pctNeg('q17', ['Não']);
-  if (crescimento >= 60)
-    insights.push({ tipo:'positivo', icone:'📈', texto:`Ponto positivo: ${crescimento}% enxergam oportunidades de crescimento dentro da empresa.` });
-  else if (semCrescimento >= 40)
-    insights.push({ tipo:'critico', icone:'📈', texto:`Ponto crítico: ${semCrescimento}% não veem perspectiva de crescimento — impacto direto na motivação e retenção.` });
-  else
-    insights.push({ tipo:'atencao', icone:'📈', texto:`Atenção: apenas ${crescimento}% percebem oportunidades claras de crescimento interno.` });
+  // ── Clareza sobre funções (Q18) ──
+  const clarezaPos = pctPos('q18', ['Sim']);
+  const clarezaNeg = pctNeg('q18', ['Não']);
+  if (clarezaPos >= 65)
+    insights.push({ tipo:'positivo', icone:'✅', peso:5,
+      texto:`Ponto positivo: ${clarezaPos}% afirmam ter clareza sobre suas responsabilidades.`,
+      acao:'Manter a comunicação clara sobre funções e metas.' });
+  else if (clarezaNeg >= 30)
+    insights.push({ tipo:'critico', icone:'🎯', peso:1,
+      texto:`Ponto crítico: ${clarezaNeg}% não têm clareza sobre suas funções e responsabilidades.`,
+      acao:'Revisar descrições de cargo e realizar alinhamentos individuais com cada colaborador.' });
 
-  // ── Equilíbrio trabalho/vida ──
+  // ── Crescimento (Q17) ──
+  const crescPos = pctPos('q17', ['Sim']);
+  const crescNeg = pctNeg('q17', ['Não']);
+  if (crescNeg >= 40)
+    insights.push({ tipo:'critico', icone:'📈', peso:1,
+      texto:`Ponto crítico: ${crescNeg}% não enxergam oportunidades de crescimento na empresa.`,
+      acao:'Criar planos de carreira e comunicar ativamente as possibilidades de desenvolvimento.' });
+  else if (crescPos >= 60)
+    insights.push({ tipo:'positivo', icone:'📈', peso:5,
+      texto:`Ponto positivo: ${crescPos}% enxergam oportunidades de crescimento na empresa.`,
+      acao:'Formalizar os planos de carreira e torná-los transparentes a todos.' });
+
+  // ── Equilíbrio (Q12) ──
   const semEquil = pctNeg('q12', ['Não']);
   if (semEquil >= 35)
-    insights.push({ tipo:'critico', icone:'⚖️', texto:`Ponto crítico: ${semEquil}% relatam não conseguir manter equilíbrio entre trabalho e vida pessoal.` });
+    insights.push({ tipo:'critico', icone:'⚖️', peso:1,
+      texto:`Ponto crítico: ${semEquil}% não conseguem equilibrar trabalho e vida pessoal.`,
+      acao:'Revisar jornadas, política de horas extras e cultura de disponibilidade fora do horário.' });
   else if (semEquil >= 20)
-    insights.push({ tipo:'atencao', icone:'⚖️', texto:`Atenção: ${semEquil}% têm dificuldade de equilibrar trabalho e vida pessoal.` });
+    insights.push({ tipo:'atencao', icone:'⚖️', peso:2,
+      texto:`Atenção: ${semEquil}% relatam dificuldade de equilibrar trabalho e vida pessoal.`,
+      acao:'Revisar jornadas e promover práticas de bem-estar no ambiente de trabalho.' });
 
-  // ── Taxa de conclusão ──
-  const taxa = metrics.started > 0 ? Math.round((metrics.completed / metrics.started) * 100) : 0;
-  if (taxa >= 75)
-    insights.push({ tipo:'positivo', icone:'📊', texto:`Observação: taxa de conclusão de ${taxa}% — alta adesão ao formulário, dados são representativos.` });
-  else if (taxa < 40 && metrics.started > 5)
-    insights.push({ tipo:'atencao', icone:'📊', texto:`Observação: taxa de conclusão de ${taxa}% — muitos iniciaram mas não finalizaram. Verifique possíveis barreiras.` });
+  // ── Comunicação clara (Q14) ──
+  const comPos = pctPos('q14', ['Sempre','Frequentemente']);
+  const comNeg = pctNeg('q14', ['Raramente','Nunca']);
+  if (comNeg >= 35)
+    insights.push({ tipo:'critico', icone:'📢', peso:1,
+      texto:`Ponto crítico: ${comNeg}% dizem que as informações raramente ou nunca são comunicadas com clareza.`,
+      acao:'Estabelecer canais de comunicação interna regulares e reuniões de alinhamento.' });
+  else if (comPos >= 60)
+    insights.push({ tipo:'positivo', icone:'📢', peso:5,
+      texto:`Ponto positivo: ${comPos}% afirmam que as informações são comunicadas com clareza.`,
+      acao:'Manter os canais de comunicação interna e documentar boas práticas.' });
 
-  // Limita a 6 insights mais relevantes (prioriza crítico > atencao > positivo > neutro)
-  const ordem = { critico:0, atencao:1, positivo:2, neutro:3 };
-  const top = insights.sort((a,b) => ordem[a.tipo] - ordem[b.tipo]).slice(0, 6);
+  // Ordena por peso (crítico primeiro) e limita a 5 insights
+  const top = insights.sort((a,b) => a.peso - b.peso).slice(0,5);
 
   grid.innerHTML = top.map(ins =>
-    `<div class="insight-card ${ins.tipo}">
-      <span class="insight-icon">${ins.icone}</span>
-      <span>${escapeHTML(ins.texto)}</span>
-    </div>`
+    insightHTML(ins.tipo, ins.icone, ins.texto, ins.acao)
   ).join('');
 }
 
-function html(tipo, icone, texto) {
-  return `<div class="insight-card ${tipo}"><span class="insight-icon">${icone}</span><span>${texto}</span></div>`;
+function insightHTML(tipo, icone, texto, acao) {
+  return `<div class="insight-card ${tipo}">
+    <span class="insight-icon">${icone}</span>
+    <div class="insight-body">
+      <span class="insight-texto">${escapeHTML(texto)}</span>
+      ${acao ? `<span class="insight-acao"><strong>Ação recomendada:</strong> ${escapeHTML(acao)}</span>` : ''}
+    </div>
+  </div>`;
 }
 
 function escapeHTML(str) {
